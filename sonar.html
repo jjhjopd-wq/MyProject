@@ -6,858 +6,641 @@
 <title>SONAR</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;700&display=swap');
-
 :root {
-  --g: #00ff88;
-  --gd: rgba(0,255,136,0.4);
-  --gb: rgba(0,255,136,0.08);
-  --am: #ffb800;
-  --bg: #010a04;
-  --panel: #020e05;
-  --grid: rgba(0,80,30,0.4);
-  --td: #005522;
+  --g:#00ff88; --gd:rgba(0,255,136,0.35); --gb:rgba(0,255,136,0.07);
+  --am:#ffb800; --rd:#ff4444;
+  --bg:#010a04; --panel:#020e05; --grid:rgba(0,80,30,0.35); --td:#005522;
 }
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--g);
+  font-family:'Share Tech Mono',monospace;overflow:hidden;touch-action:manipulation;}
+body::before{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+  pointer-events:none;z-index:9999;}
+#app{display:flex;flex-direction:column;height:100%;padding:6px;gap:5px;}
 
-* { margin:0; padding:0; box-sizing:border-box; }
+header{display:flex;justify-content:space-between;align-items:center;
+  padding:4px 10px;border:1px solid var(--grid);background:var(--panel);border-radius:3px;flex-shrink:0;}
+.logo{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;
+  letter-spacing:8px;text-shadow:0 0 10px var(--g);}
+.hstat{display:flex;gap:8px;align-items:center;font-size:10px;color:var(--td);}
+#dot{width:7px;height:7px;border-radius:50%;background:var(--td);flex-shrink:0;transition:all .3s;}
+#dot.on{background:var(--g);box-shadow:0 0 8px var(--g);animation:blink 1.2s infinite;}
+#dot.tx{background:var(--am);box-shadow:0 0 8px var(--am);animation:none;}
+#dot.rx{background:var(--rd);box-shadow:0 0 8px var(--rd);animation:blink .4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 
-html, body {
-  width:100%; height:100%;
-  background:var(--bg);
-  color:var(--g);
-  font-family:'Share Tech Mono',monospace;
-  overflow:hidden;
-  touch-action:manipulation;
-}
+/* MAIN ECHO DISPLAY */
+#echoPanel{flex:1;min-height:0;border:1px solid var(--grid);background:var(--panel);
+  border-radius:3px;position:relative;overflow:hidden;}
+#echoPanel canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+.plabel{position:absolute;top:4px;left:8px;font-size:9px;color:var(--td);
+  letter-spacing:2px;z-index:2;pointer-events:none;}
+#rangeMarker{position:absolute;top:2px;right:8px;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:24px;
+  text-shadow:0 0 10px var(--g);z-index:2;pointer-events:none;}
 
-body::before {
-  content:'';
-  position:fixed; inset:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);
-  pointer-events:none; z-index:9999;
-}
-
-#app {
-  display:flex;
-  flex-direction:column;
-  height:100%;
-  padding:6px;
-  gap:6px;
-}
-
-/* HEADER */
-header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:4px 8px;
-  border:1px solid var(--grid);
-  background:var(--panel);
-  border-radius:3px;
-  flex-shrink:0;
-}
-.logo {
-  font-family:'Rajdhani',sans-serif;
-  font-weight:700;
-  font-size:18px;
-  letter-spacing:8px;
-  text-shadow:0 0 10px var(--g);
-}
-.hstat {
-  display:flex; gap:8px; align-items:center;
-  font-size:10px; color:var(--td);
-}
-#dot {
-  width:7px; height:7px; border-radius:50%;
-  background:var(--td); flex-shrink:0;
-  transition:background .3s, box-shadow .3s;
-}
-#dot.on { background:var(--g); box-shadow:0 0 8px var(--g); animation:blink 1.2s infinite; }
-#dot.tx { background:var(--am); box-shadow:0 0 8px var(--am); animation:none; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-/* SONAR DISPLAY */
-#sonarWrap {
-  flex-shrink:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-#sonarCanvas { display:block; border-radius:50%; }
-
-/* WAVE + WATERFALL */
-#displays {
-  display:grid;
-  grid-template-rows:1fr 1fr;
-  gap:6px;
-  flex:1;
-  min-height:0;
-}
-.dpanel {
-  border:1px solid var(--grid);
-  background:var(--panel);
-  border-radius:3px;
-  position:relative;
-  overflow:hidden;
-  min-height:0;
-}
-.dpanel canvas {
-  position:absolute;
-  top:0; left:0;
-  width:100%; height:100%;
-}
-.plabel {
-  position:absolute;
-  top:4px; left:7px;
-  font-size:9px; color:var(--td);
-  letter-spacing:2px; z-index:2;
-  pointer-events:none;
-}
+/* WATERFALL */
+#wfPanel{flex:0 0 70px;border:1px solid var(--grid);background:var(--panel);
+  border-radius:3px;position:relative;overflow:hidden;}
+#wfPanel canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
 
 /* CONTROLS */
-#controls {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:6px;
-  flex-shrink:0;
-}
-.cbox {
-  background:var(--panel);
-  border:1px solid var(--grid);
-  border-radius:3px;
-  padding:6px 8px;
-}
-.clabel { font-size:9px; color:var(--td); letter-spacing:2px; }
-.cval {
-  font-family:'Rajdhani',sans-serif;
-  font-weight:700; font-size:18px;
-  line-height:1.2;
-  text-shadow:0 0 6px var(--g);
-}
-.cunit { font-size:10px; color:var(--td); margin-left:2px; }
-input[type=range] {
-  width:100%; margin-top:3px;
-  -webkit-appearance:none;
-  height:2px; background:var(--grid);
-  outline:none; border-radius:1px;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance:none;
-  width:13px; height:13px; border-radius:50%;
-  background:var(--g); box-shadow:0 0 5px var(--g); cursor:pointer;
-}
+#controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;flex-shrink:0;}
+.cbox{background:var(--panel);border:1px solid var(--grid);border-radius:3px;padding:5px 7px;}
+.clabel{font-size:8px;color:var(--td);letter-spacing:2px;}
+.cval{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;line-height:1.2;
+  text-shadow:0 0 6px var(--g);}
+.cunit{font-size:9px;color:var(--td);margin-left:1px;}
+input[type=range]{width:100%;margin-top:3px;-webkit-appearance:none;
+  height:2px;background:var(--grid);outline:none;border-radius:1px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;
+  width:14px;height:14px;border-radius:50%;background:var(--g);
+  box-shadow:0 0 5px var(--g);cursor:pointer;}
 
 /* BUTTONS */
-#btnRow {
-  display:flex; gap:6px; flex-shrink:0;
-}
-#btnFire {
-  flex:1; padding:12px 0;
-  background:var(--gb);
-  border:2px solid var(--g);
-  color:var(--g);
-  font-family:'Rajdhani',sans-serif;
-  font-weight:700; font-size:17px;
-  letter-spacing:5px;
-  border-radius:3px;
-  cursor:pointer;
-  text-shadow:0 0 8px var(--g);
-  box-shadow:0 0 10px var(--gb);
-  transition:all .1s;
-  -webkit-tap-highlight-color:transparent;
-  user-select:none;
-}
-#btnFire:active { background:var(--gd); transform:scale(.97); }
-#btnFire.busy {
-  border-color:var(--am); color:var(--am);
-  text-shadow:0 0 8px var(--am);
-  animation:blink .6s infinite;
-}
-
-.btnSmall {
-  padding:12px 14px;
-  background:transparent;
-  border:1px solid var(--grid);
-  color:var(--td);
-  font-family:'Share Tech Mono',monospace;
-  font-size:9px; letter-spacing:2px;
-  border-radius:3px; cursor:pointer;
-  transition:all .2s;
-  -webkit-tap-highlight-color:transparent;
-  user-select:none;
-}
-.btnSmall.on {
-  border-color:var(--am); color:var(--am);
-  box-shadow:0 0 8px rgba(255,184,0,.2);
-}
+#btnRow{display:flex;gap:5px;flex-shrink:0;}
+#btnFire{flex:1;padding:13px 0;background:var(--gb);border:2px solid var(--g);
+  color:var(--g);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;
+  letter-spacing:5px;border-radius:3px;cursor:pointer;
+  text-shadow:0 0 8px var(--g);transition:all .1s;
+  -webkit-tap-highlight-color:transparent;user-select:none;}
+#btnFire:active,#btnFire.busy{background:var(--gd);transform:scale(.97);}
+#btnFire.busy{border-color:var(--am);color:var(--am);text-shadow:0 0 8px var(--am);}
+.btnS{padding:13px 12px;background:transparent;border:1px solid var(--grid);
+  color:var(--td);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;
+  border-radius:3px;cursor:pointer;transition:all .2s;
+  -webkit-tap-highlight-color:transparent;user-select:none;}
+.btnS.on{border-color:var(--am);color:var(--am);box-shadow:0 0 8px rgba(255,184,0,.2);}
 
 /* STATS */
-#stats {
-  display:grid; grid-template-columns:repeat(3,1fr);
-  gap:6px; flex-shrink:0;
-}
-.sbox {
-  background:var(--panel);
-  border:1px solid var(--grid);
-  border-radius:3px;
-  padding:5px 6px; text-align:center;
-}
-.slabel { font-size:8px; color:var(--td); letter-spacing:2px; }
-.sval {
-  font-family:'Rajdhani',sans-serif;
-  font-weight:700; font-size:15px;
-  transition:color .3s;
-}
-.sval.alert { color:var(--am); }
-
-#msg {
-  text-align:center; font-size:10px;
-  color:var(--am); letter-spacing:1px;
-  min-height:16px; flex-shrink:0;
-  padding:0 4px;
-}
+#stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;flex-shrink:0;}
+.sbox{background:var(--panel);border:1px solid var(--grid);border-radius:3px;
+  padding:4px 5px;text-align:center;}
+.slabel{font-size:8px;color:var(--td);letter-spacing:1px;}
+.sval{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;}
+.sval.hi{color:var(--am);}
+#msg{text-align:center;font-size:10px;color:var(--am);letter-spacing:1px;
+  min-height:15px;flex-shrink:0;padding:0 4px;}
 </style>
 </head>
 <body>
 <div id="app">
-
   <header>
     <div class="logo">SONAR</div>
-    <div class="hstat">
-      <div id="dot"></div>
-      <span id="stxt">STANDBY</span>
-    </div>
+    <div class="hstat"><div id="dot"></div><span id="stxt">STANDBY</span></div>
   </header>
 
-  <div id="sonarWrap">
-    <canvas id="sonarCanvas"></canvas>
+  <div id="echoPanel">
+    <div class="plabel">ECHO STRENGTH · RANGE</div>
+    <div id="rangeMarker">—</div>
+    <canvas id="echoCanvas"></canvas>
   </div>
 
-  <div id="displays">
-    <div class="dpanel" id="wavePanel">
-      <div class="plabel">ECHO · WAVEFORM</div>
-      <canvas id="waveCanvas"></canvas>
-    </div>
-    <div class="dpanel" id="wfPanel">
-      <div class="plabel">WATERFALL · FREQ-TIME</div>
-      <canvas id="wfCanvas"></canvas>
-    </div>
+  <div id="wfPanel">
+    <div class="plabel">FREQ WATERFALL (TX ±3kHz)</div>
+    <canvas id="wfCanvas"></canvas>
   </div>
 
   <div id="controls">
     <div class="cbox">
       <div class="clabel">TX FREQ</div>
       <div><span class="cval" id="vFreq">18000</span><span class="cunit">Hz</span></div>
-      <input type="range" id="sFreq" min="16000" max="21000" step="500" value="18000">
+      <input type="range" id="sFreq" min="17000" max="19000" step="250" value="18000">
     </div>
     <div class="cbox">
       <div class="clabel">PULSE</div>
-      <div><span class="cval" id="vPulse">30</span><span class="cunit">ms</span></div>
-      <input type="range" id="sPulse" min="10" max="100" step="5" value="30">
+      <div><span class="cval" id="vPulse">10</span><span class="cunit">ms</span></div>
+      <input type="range" id="sPulse" min="5" max="50" step="5" value="10">
     </div>
     <div class="cbox">
-      <div class="clabel">RX GAIN</div>
-      <div><span class="cval" id="vGain">20</span><span class="cunit">dB</span></div>
-      <input type="range" id="sGain" min="0" max="40" step="1" value="20">
-    </div>
-    <div class="cbox">
-      <div class="clabel">WINDOW</div>
-      <div><span class="cval" id="vWin">400</span><span class="cunit">ms</span></div>
-      <input type="range" id="sWin" min="100" max="1500" step="50" value="400">
+      <div class="clabel">THRESHOLD</div>
+      <div><span class="cval" id="vThr">3</span><span class="cunit">×</span></div>
+      <input type="range" id="sThr" min="1" max="10" step="0.5" value="3">
     </div>
   </div>
 
   <div id="btnRow">
     <button id="btnFire">▶ PING</button>
-    <button class="btnSmall" id="btnAuto">AUTO</button>
-    <button class="btnSmall" id="btnClear">CLR</button>
+    <button class="btnS" id="btnAuto">AUTO</button>
+    <button class="btnS" id="btnClear">CLR</button>
   </div>
 
   <div id="stats">
     <div class="sbox"><div class="slabel">RANGE</div><div class="sval" id="svRange">—</div></div>
     <div class="sbox"><div class="slabel">TOF</div><div class="sval" id="svTof">—</div></div>
-    <div class="sbox"><div class="slabel">PEAK dB</div><div class="sval" id="svPeak">—</div></div>
+    <div class="sbox"><div class="slabel">SNR</div><div class="sval" id="svSnr">—</div></div>
+    <div class="sbox"><div class="slabel">CONF</div><div class="sval" id="svConf">—</div></div>
   </div>
   <div id="msg"></div>
-
 </div>
 
 <script>
 'use strict';
 
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════ */
+const SOUND_SPEED = 343;    // m/s
+const FFT_SIZE    = 8192;   // high freq resolution (~5Hz/bin @44100)
+const WINDOW_MS   = 500;    // RX listen window
+const IGNORE_MS   = 15;     // blank TX direct blast
+const BW_HZ       = 500;    // bandpass ±Hz around TX freq
+
+/* ══════════════════════════════════════
    STATE
-════════════════════════════════════════ */
+══════════════════════════════════════ */
 let actx = null, analyser = null;
 let busy = false, autoMode = false, autoTid = null;
-let echoTraces = [];          // [{pts:[{t,amp}], tof, range}]
-let waterfallRows = [];       // Float32Array[]
-const MAX_TRACES = 8;
-const MAX_WF_ROWS = 80;
-const SOUND_SPEED = 343;
+let traces   = [];   // last N echo curves for persistence display
+let wfRows   = [];   // waterfall
+const MAX_TRACES = 25;
+const MAX_WF     = 60;
 
-/* ════════════════════════════════════════
-   CANVAS REFS
-════════════════════════════════════════ */
-const sonarC  = document.getElementById('sonarCanvas');
-const sonarX  = sonarC.getContext('2d');
-const waveC   = document.getElementById('waveCanvas');
-const waveX   = waveC.getContext('2d');
-const wfC     = document.getElementById('wfCanvas');
-const wfX     = wfC.getContext('2d');
+/* ══════════════════════════════════════
+   CANVAS
+══════════════════════════════════════ */
+const echoC = document.getElementById('echoCanvas');
+const echoX = echoC.getContext('2d');
+const wfC   = document.getElementById('wfCanvas');
+const wfX   = wfC.getContext('2d');
 
-/* ════════════════════════════════════════
-   LAYOUT / RESIZE
-════════════════════════════════════════ */
 function layout() {
-  const W = window.innerWidth;
-  const H = window.innerHeight;
-
-  // Reserve vertical space for non-sonar elements
-  // header~36, controls~90, btnRow~52, stats~38, msg~22, gaps~60
-  const reserved = 36 + 90 + 52 + 38 + 22 + 60;
-  const remaining = H - reserved;
-
-  // Sonar: square, max 260px, takes ~55% of remaining
-  const sonarSize = Math.min(Math.floor(remaining * 0.55), Math.min(W - 12, 260));
-  sonarC.width  = sonarSize;
-  sonarC.height = sonarSize;
-
-  // Wave + waterfall split rest
-  const dpH = Math.max(remaining - sonarSize - 6, 80);
-  document.getElementById('displays').style.height = dpH + 'px';
-
-  // Set canvas px sizes to match CSS container
   requestAnimationFrame(() => {
-    const wp = document.getElementById('wavePanel');
-    waveC.width  = wp.clientWidth  || W - 12;
-    waveC.height = wp.clientHeight || Math.floor(dpH / 2) - 3;
-
-    const wfp = document.getElementById('wfPanel');
-    wfC.width  = wfp.clientWidth  || W - 12;
-    wfC.height = wfp.clientHeight || Math.floor(dpH / 2) - 3;
-
+    const ep = document.getElementById('echoPanel');
+    echoC.width  = ep.clientWidth  || 360;
+    echoC.height = ep.clientHeight || 200;
+    const wf = document.getElementById('wfPanel');
+    wfC.width  = wf.clientWidth  || 360;
+    wfC.height = wf.clientHeight || 70;
     redrawAll();
   });
 }
-
 window.addEventListener('resize', layout);
 
-/* ════════════════════════════════════════
-   SLIDER BINDINGS
-════════════════════════════════════════ */
-function bindSlider(sliderId, valueId) {
-  const sl = document.getElementById(sliderId);
-  const vl = document.getElementById(valueId);
-  sl.addEventListener('input', () => { vl.textContent = sl.value; });
-}
-bindSlider('sFreq','vFreq');
-bindSlider('sPulse','vPulse');
-bindSlider('sGain','vGain');
-bindSlider('sWin','vWin');
+/* ══════════════════════════════════════
+   SLIDERS
+══════════════════════════════════════ */
+[['sFreq','vFreq'],['sPulse','vPulse'],['sThr','vThr']].forEach(([sid,vid]) => {
+  document.getElementById(sid).addEventListener('input', () => {
+    document.getElementById(vid).textContent = document.getElementById(sid).value;
+  });
+});
 
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════
    AUDIO INIT
-════════════════════════════════════════ */
+══════════════════════════════════════ */
 async function initAudio() {
   if (actx && analyser) return true;
   try {
-    actx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+    // Request 48kHz if possible — better high-freq response
+    actx = new (window.AudioContext || window.webkitAudioContext)({
+      sampleRate: 48000,
+      latencyHint: 'interactive'
+    });
     if (actx.state === 'suspended') await actx.resume();
 
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: false,
         noiseSuppression: false,
-        autoGainControl: false
+        autoGainControl: false,
+        channelCount: 1
       }
     });
 
     const src = actx.createMediaStreamSource(stream);
+
+    // High-shelf boost for 17-19kHz before analysis
+    const hiShelf = actx.createBiquadFilter();
+    hiShelf.type = 'highshelf';
+    hiShelf.frequency.value = 16000;
+    hiShelf.gain.value = 12; // +12dB boost above 16kHz
+
     analyser = actx.createAnalyser();
-    analyser.fftSize = 2048;
+    analyser.fftSize = FFT_SIZE;
     analyser.smoothingTimeConstant = 0;
-    src.connect(analyser);
+
+    src.connect(hiShelf);
+    hiShelf.connect(analyser);
 
     setStatus('on', 'READY');
+    setMsg('');
     return true;
   } catch(e) {
-    setMsg('마이크 접근 실패: ' + e.message);
+    setMsg('마이크 오류: ' + e.message);
     setStatus('', 'ERROR');
     return false;
   }
 }
 
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════
    TRANSMIT
-════════════════════════════════════════ */
-function transmit(freqHz, durMs) {
+   Chirp sweep TX_FREQ ± 500Hz for better
+   correlation than pure tone
+══════════════════════════════════════ */
+function transmit(centerHz, durMs) {
   const osc  = actx.createOscillator();
   const gain = actx.createGain();
-  osc.type = 'sine';
-  osc.frequency.value = freqHz;
+  const t    = actx.currentTime;
+  const dur  = durMs / 1000;
 
-  const t   = actx.currentTime;
-  const dur = durMs / 1000;
-  const env = 0.003;
+  // Linear chirp: center-500 → center+500
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(centerHz - 500, t);
+  osc.frequency.linearRampToValueAtTime(centerHz + 500, t + dur);
+
+  // Hanning window envelope
   gain.gain.setValueAtTime(0, t);
-  gain.gain.linearRampToValueAtTime(0.9, t + env);
-  gain.gain.setValueAtTime(0.9, t + dur - env);
+  gain.gain.linearRampToValueAtTime(0.95, t + dur * 0.1);
+  gain.gain.setValueAtTime(0.95, t + dur * 0.9);
   gain.gain.linearRampToValueAtTime(0, t + dur);
 
   osc.connect(gain);
   gain.connect(actx.destination);
   osc.start(t);
-  osc.stop(t + dur + 0.01);
+  osc.stop(t + dur + 0.005);
 }
 
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════
+   BAND POWER
+   Mean linear power in [center-bw, center+bw]
+══════════════════════════════════════ */
+function bandPower(freqData, centerHz, bwHz, sr) {
+  const binHz = sr / FFT_SIZE;
+  const b0 = Math.max(0,              Math.floor((centerHz - bwHz) / binHz));
+  const b1 = Math.min(freqData.length-1, Math.ceil((centerHz + bwHz) / binHz));
+  let sum = 0;
+  for (let b = b0; b <= b1; b++) {
+    sum += Math.pow(10, freqData[b] / 10); // dB → linear power
+  }
+  return sum / Math.max(1, b1 - b0 + 1);
+}
+
+/* ══════════════════════════════════════
    PING
-════════════════════════════════════════ */
+══════════════════════════════════════ */
 async function doPing() {
   if (busy) return;
   if (!await initAudio()) return;
 
   busy = true;
-  document.getElementById('btnFire').classList.add('busy');
-  document.getElementById('btnFire').textContent = '● TX';
+  setBusy(true);
   setMsg('');
 
   const freq    = parseInt(document.getElementById('sFreq').value);
   const pulseMs = parseInt(document.getElementById('sPulse').value);
-  const gainDb  = parseInt(document.getElementById('sGain').value);
-  const winMs   = parseInt(document.getElementById('sWin').value);
+  const thrMult = parseFloat(document.getElementById('sThr').value);
+  const sr      = actx.sampleRate;
 
   // ── TX ──
-  setStatus('tx', 'TX');
+  setStatus('tx', 'TX ▶');
   transmit(freq, pulseMs);
 
-  // Wait pulse + guard
-  const guardMs = Math.max(25, pulseMs * 0.8);
-  await sleep(pulseMs + guardMs);
+  // Wait: full pulse + guard time
+  await sleep(pulseMs + Math.max(20, pulseMs));
 
-  // ── RX ──
-  setStatus('on', 'RX');
-  document.getElementById('btnFire').textContent = '● RX';
+  // ── MEASURE NOISE FLOOR (3 frames before RX) ──
+  setStatus('rx', 'RX ●');
+  const freqBuf = new Float32Array(analyser.frequencyBinCount);
+  let noiseAcc = 0;
+  const noiseFrames = 3;
+  for (let i = 0; i < noiseFrames; i++) {
+    await nextFrame();
+    analyser.getFloatFrequencyData(freqBuf);
+    noiseAcc += bandPower(freqBuf, freq, BW_HZ, sr);
+  }
+  const noiseFloor = Math.max(noiseAcc / noiseFrames, 1e-12);
 
-  const gainLin   = Math.pow(10, gainDb / 20);
-  const sampleRate = actx.sampleRate;
-  const bufLen    = analyser.fftSize;
-  const tdBuf     = new Float32Array(bufLen);
-  const fdBuf     = new Float32Array(analyser.frequencyBinCount);
+  // ── COLLECT RX FRAMES ──
+  // ms per frame = FFT_SIZE / sampleRate * 1000
+  const msPerFrame = FFT_SIZE / sr * 1000;
+  const nFrames    = Math.ceil(WINDOW_MS / msPerFrame);
+  const pts = []; // {t_ms, snr}
 
-  // How many animation frames ~ winMs
-  // Each frame gets one analyser snapshot ≈ bufLen/sampleRate seconds
-  const secsPerSnap = bufLen / sampleRate;
-  const totalSnaps  = Math.max(4, Math.ceil((winMs / 1000) / secsPerSnap));
+  for (let i = 0; i < nFrames; i++) {
+    await nextFrame();
+    analyser.getFloatFrequencyData(freqBuf);
+    const pw  = bandPower(freqBuf, freq, BW_HZ, sr);
+    const snr = pw / noiseFloor;
+    const t   = i * msPerFrame;
+    pts.push({ t, snr });
 
-  const pts = [];
-  let snap = 0;
+    // Store waterfall row (copy)
+    wfRows.push(new Float32Array(freqBuf));
+    if (wfRows.length > MAX_WF) wfRows.shift();
+  }
 
-  await new Promise(resolve => {
-    function collect() {
-      analyser.getFloatTimeDomainData(tdBuf);
-      analyser.getFloatFrequencyData(fdBuf);
-
-      // RMS amplitude of this snapshot
-      let sum = 0;
-      for (let i = 0; i < bufLen; i++) sum += tdBuf[i] * tdBuf[i];
-      const rms = Math.sqrt(sum / bufLen) * gainLin;
-
-      const tMs = snap * secsPerSnap * 1000;
-      pts.push({ t: tMs, amp: rms });
-
-      // Waterfall row (copy)
-      waterfallRows.push(new Float32Array(fdBuf));
-      if (waterfallRows.length > MAX_WF_ROWS) waterfallRows.shift();
-
-      snap++;
-      if (snap < totalSnaps) {
-        requestAnimationFrame(collect);
-      } else {
-        resolve();
-      }
-    }
-    requestAnimationFrame(collect);
-  });
-
-  // ── PROCESS ──
-  processEcho(pts, winMs, freq, gainLin);
+  processEcho(pts, thrMult, freq, sr);
 
   busy = false;
-  document.getElementById('btnFire').classList.remove('busy');
-  document.getElementById('btnFire').textContent = '▶ PING';
+  setBusy(false);
   setStatus('on', 'READY');
 }
 
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════
    PROCESS ECHO
-════════════════════════════════════════ */
-function processEcho(pts, winMs, freq, gainLin) {
-  const maxAmp = Math.max(...pts.map(p => p.amp), 1e-9);
-  const peakDb = 20 * Math.log10(maxAmp / gainLin + 1e-12);
+══════════════════════════════════════ */
+function processEcho(pts, thrMult, freq, sr) {
+  // 3-point smoothing
+  const sm = pts.map((p, i) => {
+    const a = pts[Math.max(0, i-1)].snr;
+    const b = p.snr;
+    const c = pts[Math.min(pts.length-1, i+1)].snr;
+    return { t: p.t, snr: (a + b*2 + c) / 4 }; // weighted centre
+  });
 
-  // Ignore first 15ms (direct blast)
-  const IGNORE_MS = 15;
-  const THRESHOLD = 0.015 * gainLin;
+  const maxSnr = Math.max(...sm.map(p => p.snr), 1);
 
-  let echoPt = null, echoAmp = 0;
-  for (const p of pts) {
+  // First peak above (noiseFloor × thrMult) after IGNORE_MS
+  let echoPt = null;
+  for (const p of sm) {
     if (p.t < IGNORE_MS) continue;
-    if (p.amp > THRESHOLD && p.amp > echoAmp) {
-      echoAmp = p.amp;
-      echoPt  = p;
-    }
+    if (p.snr >= thrMult) { echoPt = p; break; }
   }
 
   const tof   = echoPt ? echoPt.t : null;
   const range = tof    ? (tof / 1000) * SOUND_SPEED / 2 : null;
+  const snrDb = echoPt ? (10 * Math.log10(echoPt.snr)).toFixed(1) : null;
+  const conf  = echoPt ? Math.min(100, Math.round((echoPt.snr / maxSnr) * 100)) : 0;
 
-  // Update stats
-  document.getElementById('svPeak').textContent  = peakDb.toFixed(1) + 'dB';
-  document.getElementById('svTof').textContent   = tof   ? tof.toFixed(1) + 'ms' : '—';
-
+  // Update UI
   const rv = document.getElementById('svRange');
-  if (range !== null && range < 25) {
+  if (range !== null && range < 20) {
     rv.textContent = range.toFixed(2) + 'm';
-    rv.classList.toggle('alert', range < 0.5);
+    document.getElementById('rangeMarker').textContent = range.toFixed(2) + 'm';
+    rv.classList.toggle('hi', range < 1.0);
   } else {
-    rv.textContent = range ? '>25m' : 'N/D';
-    rv.classList.remove('alert');
+    rv.textContent = 'N/D';
+    document.getElementById('rangeMarker').textContent = '—';
+    rv.classList.remove('hi');
+  }
+  document.getElementById('svTof').textContent  = tof   ? tof.toFixed(1)+'ms' : '—';
+  document.getElementById('svSnr').textContent  = snrDb ? snrDb+'dB'          : '—';
+  document.getElementById('svConf').textContent = echoPt ? conf+'%'           : '—';
+
+  if (!echoPt) {
+    setMsg('에코 미감지 — THRESHOLD를 낮추거나 TX FREQ 변경');
+  } else {
+    setMsg('');
   }
 
-  if (!echoPt) setMsg('에코 미감지 — 물체를 가까이 두거나 GAIN을 높이세요');
-  else setMsg('');
+  // Store normalised trace
+  traces.push(sm.map(p => ({ t: p.t, v: p.snr / maxSnr })));
+  if (traces.length > MAX_TRACES) traces.shift();
 
-  // Store
-  echoTraces.push({ pts, tof, range, maxAmp });
-  if (echoTraces.length > MAX_TRACES) echoTraces.shift();
-
-  // Redraw
-  drawWave(pts, tof, winMs);
-  drawWaterfall(freq);
+  drawEcho(sm, maxSnr, tof, thrMult);
+  drawWaterfall(freq, sr);
 }
 
-/* ════════════════════════════════════════
-   DRAW: SONAR CIRCULAR
-════════════════════════════════════════ */
-let sonarAnimId = null;
-function startSonarAnim() {
-  if (sonarAnimId) return;
-  function frame() {
-    drawSonar();
-    sonarAnimId = requestAnimationFrame(frame);
-  }
-  sonarAnimId = requestAnimationFrame(frame);
-}
-
-function drawSonar() {
-  const c = sonarC;
-  const x = sonarX;
-  const W = c.width, H = c.height;
-  if (!W || !H) return;
-  const cx = W/2, cy = H/2, R = W/2 - 3;
-
-  x.clearRect(0, 0, W, H);
-
-  // BG
-  const bg = x.createRadialGradient(cx, cy, 0, cx, cy, R);
-  bg.addColorStop(0, '#031409');
-  bg.addColorStop(1, '#010703');
-  x.fillStyle = bg;
-  x.beginPath(); x.arc(cx, cy, R, 0, Math.PI*2); x.fill();
-
-  // Rings
-  x.strokeStyle = 'rgba(0,80,30,0.4)';
-  x.lineWidth = 1;
-  for (let r = R*0.25; r <= R; r += R*0.25) {
-    x.beginPath(); x.arc(cx, cy, r, 0, Math.PI*2); x.stroke();
-  }
-
-  // Crosshairs
-  x.setLineDash([2,5]);
-  for (let a = 0; a < 180; a += 45) {
-    const rad = a * Math.PI/180;
-    x.beginPath();
-    x.moveTo(cx - Math.cos(rad)*R, cy - Math.sin(rad)*R);
-    x.lineTo(cx + Math.cos(rad)*R, cy + Math.sin(rad)*R);
-    x.stroke();
-  }
-  x.setLineDash([]);
-
-  // Range labels
-  x.fillStyle = 'rgba(0,100,50,0.7)';
-  x.font = '8px Share Tech Mono';
-  x.textAlign = 'center';
-  const winMs = parseInt(document.getElementById('sWin').value);
-  for (let i = 1; i <= 4; i++) {
-    const r = R * i / 4;
-    const dist = (winMs/1000/4*i) * SOUND_SPEED / 2;
-    x.fillText(dist.toFixed(1)+'m', cx+4, cy - r + 9);
-  }
-
-  // Echo traces (A-scan style, radial)
-  const spanA = Math.PI * 0.55;
-  for (let ti = 0; ti < echoTraces.length; ti++) {
-    const tr  = echoTraces[ti];
-    const age = echoTraces.length - 1 - ti;
-    const alpha = Math.max(0, 1 - age * 0.14);
-    if (alpha <= 0) continue;
-
-    const angle = -Math.PI/2 - spanA/2 + (ti / Math.max(echoTraces.length-1, 1)) * spanA;
-    const pts  = tr.pts;
-    const mA   = Math.max(tr.maxAmp, 1e-9);
-
-    x.beginPath();
-    x.strokeStyle = `rgba(0,255,136,${alpha * 0.55})`;
-    x.lineWidth = 1.5;
-    for (let j = 0; j < pts.length; j++) {
-      const normT = Math.min(pts[j].t / winMs, 1);
-      const radius = normT * R;
-      const normA  = Math.min(pts[j].amp / mA, 1);
-      const aOff   = normA * 0.06;
-      const a = angle + aOff;
-      const px = cx + Math.cos(a) * radius;
-      const py = cy + Math.sin(a) * radius;
-      j === 0 ? x.moveTo(px, py) : x.lineTo(px, py);
-    }
-    x.stroke();
-
-    if (tr.tof !== null) {
-      const normT = Math.min(tr.tof / winMs, 1);
-      const er = normT * R;
-      const ex = cx + Math.cos(angle) * er;
-      const ey = cy + Math.sin(angle) * er;
-      x.beginPath(); x.arc(ex, ey, 4, 0, Math.PI*2);
-      x.fillStyle = `rgba(0,255,136,${alpha})`;
-      x.fill();
-      x.strokeStyle = `rgba(0,255,136,${alpha*0.4})`;
-      x.lineWidth = 7; x.stroke(); x.lineWidth = 1;
-    }
-  }
-
-  // Sweep
-  const now = Date.now();
-  const sa = ((now % 2800) / 2800) * Math.PI*2 - Math.PI/2;
-  const sg = x.createLinearGradient(cx, cy, cx + Math.cos(sa)*R, cy + Math.sin(sa)*R);
-  sg.addColorStop(0, 'rgba(0,255,136,0)');
-  sg.addColorStop(0.6, 'rgba(0,255,136,0.03)');
-  sg.addColorStop(1, 'rgba(0,255,136,0.25)');
-  x.strokeStyle = sg;
-  x.lineWidth = 2;
-  x.beginPath(); x.moveTo(cx, cy);
-  x.lineTo(cx + Math.cos(sa)*R, cy + Math.sin(sa)*R);
-  x.stroke();
-
-  // Center
-  x.beginPath(); x.arc(cx, cy, 3, 0, Math.PI*2);
-  x.fillStyle = '#00ff88';
-  x.shadowBlur = 10; x.shadowColor = '#00ff88';
-  x.fill(); x.shadowBlur = 0;
-
-  // Outer ring
-  x.beginPath(); x.arc(cx, cy, R, 0, Math.PI*2);
-  x.strokeStyle = 'rgba(0,200,100,0.4)';
-  x.lineWidth = 2; x.stroke();
-}
-
-/* ════════════════════════════════════════
-   DRAW: WAVEFORM
-════════════════════════════════════════ */
-function drawWave(pts, tofMs, winMs) {
-  const W = waveC.width, H = waveC.height;
-  if (!W || !H) return;
-  waveX.clearRect(0, 0, W, H);
+/* ══════════════════════════════════════
+   DRAW: ECHO
+══════════════════════════════════════ */
+function drawEcho(pts, maxSnr, tofMs, thrMult) {
+  const W = echoC.width, H = echoC.height;
+  echoX.clearRect(0, 0, W, H);
 
   // Grid
-  waveX.strokeStyle = 'rgba(0,60,20,0.4)';
-  waveX.lineWidth = 1;
-  for (let gx = 0; gx <= W; gx += W/8) {
-    waveX.beginPath(); waveX.moveTo(gx, 0); waveX.lineTo(gx, H); waveX.stroke();
+  echoX.strokeStyle = 'rgba(0,60,20,0.35)';
+  echoX.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    const x = (i / 10) * W;
+    echoX.beginPath(); echoX.moveTo(x,0); echoX.lineTo(x,H); echoX.stroke();
   }
-  for (let gy = 0; gy <= H; gy += H/4) {
-    waveX.beginPath(); waveX.moveTo(0, gy); waveX.lineTo(W, gy); waveX.stroke();
+  for (let i = 0; i <= 4; i++) {
+    const y = (i / 4) * H;
+    echoX.beginPath(); echoX.moveTo(0,y); echoX.lineTo(W,y); echoX.stroke();
+  }
+
+  // Range axis labels
+  echoX.fillStyle = 'rgba(0,120,60,0.7)';
+  echoX.font = '8px Share Tech Mono';
+  echoX.textAlign = 'center';
+  for (let i = 1; i <= 10; i++) {
+    const tMs  = WINDOW_MS * i / 10;
+    const dist = (tMs / 1000) * SOUND_SPEED / 2;
+    if (dist < 100) echoX.fillText(dist.toFixed(1)+'m', (i/10)*W, H-3);
   }
 
   if (!pts || !pts.length) {
-    waveX.fillStyle = 'rgba(0,100,50,0.5)';
-    waveX.font = '10px Share Tech Mono';
-    waveX.textAlign = 'center';
-    waveX.fillText('AWAITING ECHO', W/2, H/2);
+    echoX.fillStyle = 'rgba(0,150,70,0.4)';
+    echoX.font = '11px Share Tech Mono';
+    echoX.textAlign = 'center';
+    echoX.fillText('PING 버튼을 눌러 시작', W/2, H/2);
     return;
   }
 
-  const maxA = Math.max(...pts.map(p => p.amp), 1e-9);
-
-  // Fill
-  waveX.beginPath();
-  waveX.moveTo(0, H);
-  for (let i = 0; i < pts.length; i++) {
-    const px = (pts[i].t / winMs) * W;
-    const py = H - (pts[i].amp / maxA) * (H - 4) - 2;
-    waveX.lineTo(px, py);
+  // Older traces (persistence / afterglow)
+  for (let ti = 0; ti < traces.length - 1; ti++) {
+    const age = traces.length - 1 - ti;
+    const alpha = Math.max(0, 0.3 - age * 0.012);
+    if (alpha <= 0) continue;
+    const tr = traces[ti];
+    echoX.beginPath();
+    echoX.strokeStyle = `rgba(0,255,136,${alpha})`;
+    echoX.lineWidth = 1;
+    for (let j = 0; j < tr.length; j++) {
+      const px = (tr[j].t / WINDOW_MS) * W;
+      const py = H - tr[j].v * (H - 14) - 7;
+      j === 0 ? echoX.moveTo(px, py) : echoX.lineTo(px, py);
+    }
+    echoX.stroke();
   }
-  waveX.lineTo(W, H);
-  waveX.closePath();
-  const fg = waveX.createLinearGradient(0, 0, 0, H);
-  fg.addColorStop(0, 'rgba(0,255,136,0.35)');
+
+  // TX ignore zone
+  const ignX = (IGNORE_MS / WINDOW_MS) * W;
+  echoX.fillStyle = 'rgba(255,60,60,0.05)';
+  echoX.fillRect(0, 0, ignX, H);
+  echoX.strokeStyle = 'rgba(255,80,80,0.25)';
+  echoX.lineWidth = 1;
+  echoX.setLineDash([3,3]);
+  echoX.beginPath(); echoX.moveTo(ignX,0); echoX.lineTo(ignX,H); echoX.stroke();
+  echoX.setLineDash([]);
+
+  // Threshold line (SNR = thrMult, normalised)
+  const thrNorm = Math.min(thrMult / maxSnr, 1);
+  const thrY = H - thrNorm * (H - 14) - 7;
+  echoX.strokeStyle = 'rgba(255,184,0,0.45)';
+  echoX.lineWidth = 1;
+  echoX.setLineDash([5,4]);
+  echoX.beginPath(); echoX.moveTo(0,thrY); echoX.lineTo(W,thrY); echoX.stroke();
+  echoX.setLineDash([]);
+  echoX.fillStyle = 'rgba(255,184,0,0.6)';
+  echoX.font = '8px Share Tech Mono';
+  echoX.textAlign = 'left';
+  echoX.fillText('THR', 4, thrY - 3);
+
+  // Current trace fill
+  echoX.beginPath();
+  echoX.moveTo(0, H);
+  for (let i = 0; i < pts.length; i++) {
+    const px = (pts[i].t / WINDOW_MS) * W;
+    const py = H - (pts[i].snr / maxSnr) * (H - 14) - 7;
+    echoX.lineTo(px, py);
+  }
+  echoX.lineTo(W, H);
+  echoX.closePath();
+  const fg = echoX.createLinearGradient(0, 0, 0, H);
+  fg.addColorStop(0, 'rgba(0,255,136,0.45)');
   fg.addColorStop(1, 'rgba(0,255,136,0.02)');
-  waveX.fillStyle = fg;
-  waveX.fill();
+  echoX.fillStyle = fg;
+  echoX.fill();
 
-  // Line
-  waveX.beginPath();
-  waveX.strokeStyle = '#00ff88';
-  waveX.lineWidth = 1.5;
-  waveX.shadowBlur = 4; waveX.shadowColor = '#00ff88';
+  // Current trace line
+  echoX.beginPath();
+  echoX.strokeStyle = '#00ff88';
+  echoX.lineWidth = 2;
+  echoX.shadowBlur = 6; echoX.shadowColor = '#00ff88';
   for (let i = 0; i < pts.length; i++) {
-    const px = (pts[i].t / winMs) * W;
-    const py = H - (pts[i].amp / maxA) * (H - 4) - 2;
-    i === 0 ? waveX.moveTo(px, py) : waveX.lineTo(px, py);
+    const px = (pts[i].t / WINDOW_MS) * W;
+    const py = H - (pts[i].snr / maxSnr) * (H - 14) - 7;
+    i === 0 ? echoX.moveTo(px, py) : echoX.lineTo(px, py);
   }
-  waveX.stroke();
-  waveX.shadowBlur = 0;
+  echoX.stroke();
+  echoX.shadowBlur = 0;
 
-  // TOF marker
+  // TOF / echo marker
   if (tofMs !== null) {
-    const tx = (tofMs / winMs) * W;
-    waveX.strokeStyle = '#ffb800';
-    waveX.lineWidth = 1;
-    waveX.setLineDash([3,4]);
-    waveX.beginPath(); waveX.moveTo(tx, 0); waveX.lineTo(tx, H); waveX.stroke();
-    waveX.setLineDash([]);
-    waveX.fillStyle = '#ffb800';
-    waveX.font = '9px Share Tech Mono';
-    waveX.textAlign = tx > W*0.7 ? 'right' : 'left';
-    waveX.fillText('ECHO', tx + (tx > W*0.7 ? -4 : 4), 13);
+    const tx = (tofMs / WINDOW_MS) * W;
+    // Vertical line
+    echoX.strokeStyle = '#ffb800';
+    echoX.lineWidth = 2;
+    echoX.shadowBlur = 8; echoX.shadowColor = '#ffb800';
+    echoX.setLineDash([3,3]);
+    echoX.beginPath(); echoX.moveTo(tx,0); echoX.lineTo(tx,H); echoX.stroke();
+    echoX.setLineDash([]);
+    echoX.shadowBlur = 0;
+    // Label
+    const range = (tofMs / 1000) * SOUND_SPEED / 2;
+    echoX.fillStyle = '#ffb800';
+    echoX.font = 'bold 10px Share Tech Mono';
+    echoX.textAlign = tx > W * 0.72 ? 'right' : 'left';
+    echoX.fillText('◆ ' + range.toFixed(2) + 'm', tx + (tx > W*0.72 ? -5 : 5), 18);
+    // Dot at peak
+    const peakPt = pts.find(p => Math.abs(p.t - tofMs) < (WINDOW_MS / pts.length) * 1.5);
+    if (peakPt) {
+      const py = H - (peakPt.snr / maxSnr) * (H - 14) - 7;
+      echoX.beginPath(); echoX.arc(tx, py, 5, 0, Math.PI*2);
+      echoX.fillStyle = '#ffb800';
+      echoX.shadowBlur = 10; echoX.shadowColor = '#ffb800';
+      echoX.fill(); echoX.shadowBlur = 0;
+    }
   }
 }
 
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════
    DRAW: WATERFALL
-════════════════════════════════════════ */
-function drawWaterfall(txFreq) {
+══════════════════════════════════════ */
+function drawWaterfall(txFreq, sr) {
   const W = wfC.width, H = wfC.height;
-  if (!W || !H) return;
   wfX.clearRect(0, 0, W, H);
 
-  if (!waterfallRows.length) {
-    wfX.fillStyle = 'rgba(0,100,50,0.5)';
-    wfX.font = '10px Share Tech Mono';
+  if (!wfRows.length) {
+    wfX.fillStyle = 'rgba(0,80,40,0.5)';
+    wfX.font = '9px Share Tech Mono';
     wfX.textAlign = 'center';
-    wfX.fillText('AWAITING WATERFALL', W/2, H/2);
+    wfX.fillText('AWAITING SIGNAL', W/2, H/2+3);
     return;
   }
 
-  const freq = txFreq || parseInt(document.getElementById('sFreq').value);
-  const sr   = actx ? actx.sampleRate : 44100;
-  const bins  = waterfallRows[0].length;
-
-  // Display ±3kHz around TX freq
-  const fMin = freq - 3000, fMax = freq + 3000;
-  const bMin = Math.max(0, Math.floor(fMin / (sr/2) * bins));
-  const bMax = Math.min(bins-1, Math.ceil(fMax / (sr/2) * bins));
+  const freq  = txFreq || parseInt(document.getElementById('sFreq').value);
+  const rate  = sr     || (actx ? actx.sampleRate : 48000);
+  const bins  = wfRows[0].length;
+  const binHz = rate / FFT_SIZE;
+  const span  = 3000;
+  const bMin  = Math.max(0,      Math.floor((freq - span) / binHz));
+  const bMax  = Math.min(bins-1, Math.ceil( (freq + span) / binHz));
   const bSpan = bMax - bMin;
+  const rowH  = Math.max(1, H / wfRows.length);
 
-  const rowH = Math.max(1, H / waterfallRows.length);
-
-  for (let r = 0; r < waterfallRows.length; r++) {
-    const row = waterfallRows[r];
-    const y   = H - (r+1) * rowH;
-
+  for (let r = 0; r < wfRows.length; r++) {
+    const row = wfRows[r];
+    const y   = H - (r + 1) * rowH;
     for (let b = 0; b < bSpan; b++) {
       const bi   = Math.min(bMin + b, row.length - 1);
-      const db   = row[bi]; // -Inf to 0
-      const norm = Math.min(1, Math.max(0, (db + 90) / 70));
-
-      const bx = (b / bSpan) * W;
-      const bw = W / bSpan + 1;
-
+      const db   = row[bi];
+      const norm = Math.min(1, Math.max(0, (db + 80) / 60));
+      const bx   = (b / bSpan) * W;
+      const bw   = W / bSpan + 1;
       let R, G, B;
-      if (norm < 0.5) {
-        R = 0; G = Math.floor(norm * 2 * 180); B = 0;
-      } else {
-        const t = (norm - 0.5) * 2;
-        R = Math.floor(t * 255); G = Math.floor(180 + t * 75); B = Math.floor(t * 80);
-      }
+      if (norm < 0.4)      { R=0; G=Math.floor(norm/0.4*160); B=0; }
+      else if (norm < 0.7) { const t=(norm-0.4)/0.3; R=0; G=Math.floor(160+t*80); B=Math.floor(t*80); }
+      else                 { const t=(norm-0.7)/0.3; R=Math.floor(t*240); G=Math.floor(240+t*15); B=Math.floor(80+t*120); }
       wfX.fillStyle = `rgb(${R},${G},${B})`;
       wfX.fillRect(bx, y, bw, rowH + 1);
     }
   }
 
-  // Center freq marker
-  wfX.strokeStyle = 'rgba(255,184,0,0.5)';
-  wfX.lineWidth = 1;
-  wfX.setLineDash([2,4]);
+  // TX freq centre line
+  wfX.strokeStyle = 'rgba(255,184,0,0.7)';
+  wfX.lineWidth = 1.5;
+  wfX.setLineDash([2,3]);
   wfX.beginPath(); wfX.moveTo(W/2, 0); wfX.lineTo(W/2, H); wfX.stroke();
   wfX.setLineDash([]);
 }
 
-/* ════════════════════════════════════════
-   REDRAW ALL (for resize / init)
-════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+function nextFrame() { return new Promise(r => requestAnimationFrame(r)); }
+function sleep(ms)   { return new Promise(r => setTimeout(r, ms)); }
+function setStatus(cls, txt) {
+  document.getElementById('dot').className = cls;
+  document.getElementById('stxt').textContent = txt;
+}
+function setMsg(m) { document.getElementById('msg').textContent = m; }
+function setBusy(on) {
+  const b = document.getElementById('btnFire');
+  b.classList.toggle('busy', on);
+  b.textContent = on ? '● MEASURING' : '▶ PING';
+}
 function redrawAll() {
-  drawSonar();
-  drawWave(null, null, 400);
+  drawEcho(null, 1, null, 3);
   drawWaterfall();
 }
 
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════
    AUTO MODE
-════════════════════════════════════════ */
-function setAuto(on) {
-  autoMode = on;
-  document.getElementById('btnAuto').classList.toggle('on', on);
+══════════════════════════════════════ */
+document.getElementById('btnAuto').addEventListener('click', () => {
+  autoMode = !autoMode;
+  document.getElementById('btnAuto').classList.toggle('on', autoMode);
   if (autoTid) { clearInterval(autoTid); autoTid = null; }
-  if (on) {
-    const interval = () => parseInt(document.getElementById('sWin').value)
-                         + parseInt(document.getElementById('sPulse').value) + 600;
-    autoTid = setInterval(() => { if (!busy) doPing(); }, interval());
+  if (autoMode) {
+    autoTid = setInterval(() => { if (!busy) doPing(); }, WINDOW_MS + 600);
   }
-}
+});
 
-document.getElementById('btnAuto').addEventListener('click', () => setAuto(!autoMode));
 document.getElementById('btnClear').addEventListener('click', () => {
-  echoTraces = []; waterfallRows = [];
-  document.getElementById('svRange').textContent = '—';
-  document.getElementById('svTof').textContent   = '—';
-  document.getElementById('svPeak').textContent  = '—';
+  traces = []; wfRows = [];
+  ['svRange','svTof','svSnr','svConf'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+    document.getElementById(id).classList.remove('hi');
+  });
+  document.getElementById('rangeMarker').textContent = '—';
   setMsg('');
   redrawAll();
 });
 
-/* ════════════════════════════════════════
-   FIRE BUTTON — single handler
-════════════════════════════════════════ */
-let firePending = false;
-document.getElementById('btnFire').addEventListener('pointerdown', async (e) => {
+/* ══════════════════════════════════════
+   FIRE BUTTON
+══════════════════════════════════════ */
+let fp = false;
+document.getElementById('btnFire').addEventListener('pointerdown', async e => {
   e.preventDefault();
-  if (firePending || busy) return;
-  firePending = true;
+  if (fp || busy) return;
+  fp = true;
   await doPing();
-  firePending = false;
+  fp = false;
 });
 
-/* ════════════════════════════════════════
-   HELPERS
-════════════════════════════════════════ */
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-function setStatus(cls, txt) {
-  const d = document.getElementById('dot');
-  d.className = cls;
-  document.getElementById('stxt').textContent = txt;
-}
-
-function setMsg(m) { document.getElementById('msg').textContent = m; }
-
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════
    INIT
-════════════════════════════════════════ */
+══════════════════════════════════════ */
 layout();
-startSonarAnim();
 
 if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-  setMsg('⚠ HTTPS 환경에서만 마이크 접근 가능합니다');
+  setMsg('⚠ HTTPS / localhost 환경에서만 마이크 사용 가능');
 }
 </script>
 </body>
