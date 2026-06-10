@@ -5,195 +5,371 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>SONAR</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;700&display=swap');
+
 :root {
-  --g:#00ff88; --gd:rgba(0,255,136,0.35); --gb:rgba(0,255,136,0.07);
-  --am:#ffb800; --rd:#ff4444;
-  --bg:#010a04; --panel:#020e05; --grid:rgba(0,80,30,0.35); --td:#005522;
+  --g:  #00ff88;
+  --g2: #00cc66;
+  --gd: rgba(0,255,136,0.18);
+  --gb: rgba(0,255,136,0.06);
+  --am: #ffb800;
+  --rd: #ff4455;
+  --cy: #00cfff;
+  --bg: #010a04;
+  --p0: #020e05;
+  --p1: #031208;
+  --gr: rgba(0,90,35,0.3);
+  --td: #005522;
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;background:var(--bg);color:var(--g);
-  font-family:'Share Tech Mono',monospace;overflow:hidden;touch-action:manipulation;}
-body::before{content:'';position:fixed;inset:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
-  pointer-events:none;z-index:9999;}
-#app{display:flex;flex-direction:column;height:100%;padding:6px;gap:5px;}
 
-header{display:flex;justify-content:space-between;align-items:center;
-  padding:4px 10px;border:1px solid var(--grid);background:var(--panel);border-radius:3px;flex-shrink:0;}
-.logo{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;
-  letter-spacing:8px;text-shadow:0 0 10px var(--g);}
-.hstat{display:flex;gap:8px;align-items:center;font-size:10px;color:var(--td);}
-#dot{width:7px;height:7px;border-radius:50%;background:var(--td);flex-shrink:0;transition:all .3s;}
-#dot.on{background:var(--g);box-shadow:0 0 8px var(--g);animation:blink 1.2s infinite;}
-#dot.tx{background:var(--am);box-shadow:0 0 8px var(--am);animation:none;}
-#dot.rx{background:var(--rd);box-shadow:0 0 8px var(--rd);animation:blink .4s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
-/* MAIN ECHO DISPLAY */
-#echoPanel{flex:1;min-height:0;border:1px solid var(--grid);background:var(--panel);
-  border-radius:3px;position:relative;overflow:hidden;}
-#echoPanel canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
-.plabel{position:absolute;top:4px;left:8px;font-size:9px;color:var(--td);
-  letter-spacing:2px;z-index:2;pointer-events:none;}
-#rangeMarker{position:absolute;top:2px;right:8px;
-  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:24px;
-  text-shadow:0 0 10px var(--g);z-index:2;pointer-events:none;}
+html, body {
+  width:100%; height:100%;
+  background:var(--bg);
+  color:var(--g);
+  font-family:'Share Tech Mono', monospace;
+  overflow:hidden;
+  touch-action:manipulation;
+  user-select:none;
+}
 
-/* WATERFALL */
-#wfPanel{flex:0 0 70px;border:1px solid var(--grid);background:var(--panel);
-  border-radius:3px;position:relative;overflow:hidden;}
-#wfPanel canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+/* CRT lines */
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background:repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.055) 2px, rgba(0,0,0,0.055) 4px
+  );
+  pointer-events:none; z-index:9999;
+}
 
-/* CONTROLS */
-#controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;flex-shrink:0;}
-.cbox{background:var(--panel);border:1px solid var(--grid);border-radius:3px;padding:5px 7px;}
-.clabel{font-size:8px;color:var(--td);letter-spacing:2px;}
-.cval{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;line-height:1.2;
-  text-shadow:0 0 6px var(--g);}
-.cunit{font-size:9px;color:var(--td);margin-left:1px;}
-input[type=range]{width:100%;margin-top:3px;-webkit-appearance:none;
-  height:2px;background:var(--grid);outline:none;border-radius:1px;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;
-  width:14px;height:14px;border-radius:50%;background:var(--g);
-  box-shadow:0 0 5px var(--g);cursor:pointer;}
+/* ── LAYOUT ── */
+#app {
+  display: grid;
+  grid-template-rows: 38px 1fr 1fr 100px 44px 36px;
+  height: 100%;
+  padding: 5px;
+  gap: 5px;
+}
 
-/* BUTTONS */
-#btnRow{display:flex;gap:5px;flex-shrink:0;}
-#btnFire{flex:1;padding:13px 0;background:var(--gb);border:2px solid var(--g);
-  color:var(--g);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;
-  letter-spacing:5px;border-radius:3px;cursor:pointer;
-  text-shadow:0 0 8px var(--g);transition:all .1s;
-  -webkit-tap-highlight-color:transparent;user-select:none;}
-#btnFire:active,#btnFire.busy{background:var(--gd);transform:scale(.97);}
-#btnFire.busy{border-color:var(--am);color:var(--am);text-shadow:0 0 8px var(--am);}
-.btnS{padding:13px 12px;background:transparent;border:1px solid var(--grid);
-  color:var(--td);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;
-  border-radius:3px;cursor:pointer;transition:all .2s;
-  -webkit-tap-highlight-color:transparent;user-select:none;}
-.btnS.on{border-color:var(--am);color:var(--am);box-shadow:0 0 8px rgba(255,184,0,.2);}
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  background: var(--p0);
+  border: 1px solid var(--gr);
+  border-radius: 3px;
+}
+.logo {
+  font-family:'Rajdhani',sans-serif;
+  font-weight:700; font-size:17px;
+  letter-spacing:7px;
+  text-shadow:0 0 10px var(--g);
+}
+.hright { display:flex; gap:12px; align-items:center; }
+.hstat  { display:flex; gap:6px; align-items:center; font-size:9px; color:var(--td); }
+#dot    { width:7px; height:7px; border-radius:50%; background:var(--td); transition:all .25s; }
+#dot.on { background:var(--g); box-shadow:0 0 7px var(--g); animation:blink 1.2s infinite; }
+#dot.tx { background:var(--am); box-shadow:0 0 7px var(--am); animation:pulse .3s infinite; }
+#dot.rx { background:var(--rd); box-shadow:0 0 7px var(--rd); animation:pulse .15s infinite; }
+@keyframes blink  { 0%,100%{opacity:1} 50%{opacity:.2} }
+@keyframes pulse  { 0%,100%{transform:scale(1)} 50%{transform:scale(1.5)} }
 
-/* STATS */
-#stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;flex-shrink:0;}
-.sbox{background:var(--panel);border:1px solid var(--grid);border-radius:3px;
-  padding:4px 5px;text-align:center;}
-.slabel{font-size:8px;color:var(--td);letter-spacing:1px;}
-.sval{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;}
-.sval.hi{color:var(--am);}
-#msg{text-align:center;font-size:10px;color:var(--am);letter-spacing:1px;
-  min-height:15px;flex-shrink:0;padding:0 4px;}
+/* vibrate icon */
+#vibIcon { font-size:14px; opacity:.35; transition:opacity .2s; }
+#vibIcon.on { opacity:1; animation:vibrate .15s infinite; }
+@keyframes vibrate { 0%,100%{transform:translateX(0)} 50%{transform:translateX(2px)} }
+
+/* ── PANELS ── */
+.panel {
+  background: var(--p0);
+  border: 1px solid var(--gr);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+.panel canvas {
+  position:absolute; top:0; left:0;
+  width:100%; height:100%;
+  display:block;
+}
+.plabel {
+  position:absolute; top:4px; left:8px;
+  font-size:8px; color:var(--td);
+  letter-spacing:2px; z-index:3; pointer-events:none;
+}
+.pbadge {
+  position:absolute; top:3px; right:8px;
+  font-family:'Rajdhani',sans-serif; font-weight:700;
+  font-size:20px; z-index:3; pointer-events:none;
+  text-shadow:0 0 8px currentColor;
+}
+
+/* TX panel badge */
+#txBadge  { color:var(--am); }
+/* RX panel badge */
+#rxBadge  { color:var(--g); }
+
+/* ── SPECTRUM PANEL ── */
+/* (full freq — 100px tall fixed) */
+#specPanel { /* set by grid row */ }
+
+/* ── CONTROLS ROW ── */
+#ctrlRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+.cbox {
+  background:var(--p0);
+  border:1px solid var(--gr);
+  border-radius:3px;
+  padding:4px 7px;
+}
+.clabel { font-size:7px; color:var(--td); letter-spacing:2px; display:block; }
+.cval   {
+  font-family:'Rajdhani',sans-serif;
+  font-weight:700; font-size:16px;
+  line-height:1.1; color:var(--g);
+  text-shadow:0 0 5px var(--g);
+}
+.cunit  { font-size:8px; color:var(--td); }
+input[type=range] {
+  width:100%; margin-top:3px;
+  -webkit-appearance:none;
+  height:2px; background:var(--gr);
+  outline:none; border-radius:1px;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:13px; height:13px; border-radius:50%;
+  background:var(--g); box-shadow:0 0 4px var(--g);
+  cursor:pointer;
+}
+
+/* ── BUTTON ROW ── */
+#btnRow { display:flex; gap:5px; }
+#btnFire {
+  flex:1; padding:0;
+  background:var(--gb);
+  border:2px solid var(--g);
+  color:var(--g);
+  font-family:'Rajdhani',sans-serif;
+  font-weight:700; font-size:16px;
+  letter-spacing:5px;
+  border-radius:3px; cursor:pointer;
+  text-shadow:0 0 7px var(--g);
+  transition:all .1s;
+}
+#btnFire:active { background:var(--gd); transform:scale(.97); }
+#btnFire.on {
+  background:rgba(255,68,85,0.12);
+  border-color:var(--rd);
+  color:var(--rd);
+  text-shadow:0 0 7px var(--rd);
+}
+.btnS {
+  padding:0 13px;
+  background:transparent;
+  border:1px solid var(--gr);
+  color:var(--td);
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px; letter-spacing:2px;
+  border-radius:3px; cursor:pointer;
+  transition:all .2s;
+}
+.btnS.on { border-color:var(--am); color:var(--am); box-shadow:0 0 7px rgba(255,184,0,.2); }
+
+/* ── STATUS BAR ── */
+#statBar {
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:4px;
+}
+.sbox {
+  background:var(--p0);
+  border:1px solid var(--gr);
+  border-radius:3px;
+  padding:3px 5px; text-align:center;
+}
+.slabel { font-size:7px; color:var(--td); letter-spacing:1px; }
+.sval   {
+  font-family:'Rajdhani',sans-serif;
+  font-weight:700; font-size:13px; line-height:1.1;
+}
+.sval.hi { color:var(--am); animation:blink .5s infinite; }
+
+/* ── TOAST MSG ── */
+#toast {
+  position:fixed; bottom:60px; left:50%; transform:translateX(-50%);
+  background:rgba(255,68,85,0.85);
+  color:#fff; font-size:11px; letter-spacing:1px;
+  padding:6px 14px; border-radius:20px;
+  opacity:0; transition:opacity .3s;
+  pointer-events:none; z-index:9998;
+}
+#toast.show { opacity:1; }
 </style>
 </head>
 <body>
 <div id="app">
+
+  <!-- HEADER -->
   <header>
     <div class="logo">SONAR</div>
-    <div class="hstat"><div id="dot"></div><span id="stxt">STANDBY</span></div>
+    <div class="hright">
+      <div id="vibIcon">📳</div>
+      <div class="hstat"><div id="dot"></div><span id="stxt">STANDBY</span></div>
+    </div>
   </header>
 
-  <div id="echoPanel">
-    <div class="plabel">ECHO STRENGTH · RANGE</div>
-    <div id="rangeMarker">—</div>
-    <canvas id="echoCanvas"></canvas>
+  <!-- TX PANEL: transmit timing & waveform -->
+  <div class="panel" id="txPanel">
+    <div class="plabel">TX · 송신 신호</div>
+    <div class="pbadge" id="txBadge">—</div>
+    <canvas id="txCanvas"></canvas>
   </div>
 
-  <div id="wfPanel">
-    <div class="plabel">FREQ WATERFALL (TX ±3kHz)</div>
-    <canvas id="wfCanvas"></canvas>
+  <!-- RX PANEL: realtime received waveform + echo envelope -->
+  <div class="panel" id="rxPanel">
+    <div class="plabel">RX · 수신 신호 (실시간)</div>
+    <div class="pbadge" id="rxBadge">—</div>
+    <canvas id="rxCanvas"></canvas>
   </div>
 
-  <div id="controls">
+  <!-- SPECTRUM PANEL: full 20Hz~24kHz with TX marker -->
+  <div class="panel" id="specPanel">
+    <div class="plabel">SPECTRUM · 전체 주파수 (20Hz – 24kHz)</div>
+    <canvas id="specCanvas"></canvas>
+  </div>
+
+  <!-- CONTROLS -->
+  <div id="ctrlRow">
     <div class="cbox">
-      <div class="clabel">TX FREQ</div>
+      <span class="clabel">TX FREQ</span>
       <div><span class="cval" id="vFreq">18000</span><span class="cunit">Hz</span></div>
       <input type="range" id="sFreq" min="17000" max="19000" step="250" value="18000">
     </div>
     <div class="cbox">
-      <div class="clabel">PULSE</div>
+      <span class="clabel">INTERVAL</span>
+      <div><span class="cval" id="vIntvl">1000</span><span class="cunit">ms</span></div>
+      <input type="range" id="sIntvl" min="300" max="3000" step="100" value="1000">
+    </div>
+    <div class="cbox">
+      <span class="clabel">PULSE</span>
       <div><span class="cval" id="vPulse">10</span><span class="cunit">ms</span></div>
       <input type="range" id="sPulse" min="5" max="50" step="5" value="10">
     </div>
     <div class="cbox">
-      <div class="clabel">THRESHOLD</div>
-      <div><span class="cval" id="vThr">3</span><span class="cunit">×</span></div>
-      <input type="range" id="sThr" min="1" max="10" step="0.5" value="3">
+      <span class="clabel">THRESH ×</span>
+      <div><span class="cval" id="vThr">3.0</span></div>
+      <input type="range" id="sThr" min="1.5" max="10" step="0.5" value="3">
     </div>
   </div>
 
+  <!-- BUTTONS -->
   <div id="btnRow">
-    <button id="btnFire">▶ PING</button>
-    <button class="btnS" id="btnAuto">AUTO</button>
-    <button class="btnS" id="btnClear">CLR</button>
+    <button id="btnFire">▶ START</button>
+    <button class="btnS" id="btnVib">VIB</button>
+    <button class="btnS" id="btnClr">CLR</button>
   </div>
 
-  <div id="stats">
+  <!-- STATUS BAR -->
+  <div id="statBar">
     <div class="sbox"><div class="slabel">RANGE</div><div class="sval" id="svRange">—</div></div>
     <div class="sbox"><div class="slabel">TOF</div><div class="sval" id="svTof">—</div></div>
     <div class="sbox"><div class="slabel">SNR</div><div class="sval" id="svSnr">—</div></div>
-    <div class="sbox"><div class="slabel">CONF</div><div class="sval" id="svConf">—</div></div>
+    <div class="sbox"><div class="slabel">TX CNT</div><div class="sval" id="svTxCnt">0</div></div>
+    <div class="sbox"><div class="slabel">DETECT</div><div class="sval" id="svDet">—</div></div>
   </div>
-  <div id="msg"></div>
+
 </div>
+
+<div id="toast"></div>
 
 <script>
 'use strict';
 
-/* ══════════════════════════════════════
+/* ══════════════════════════════════════════════════
    CONSTANTS
-══════════════════════════════════════ */
-const SOUND_SPEED = 343;    // m/s
-const FFT_SIZE    = 8192;   // high freq resolution (~5Hz/bin @44100)
-const WINDOW_MS   = 500;    // RX listen window
-const IGNORE_MS   = 15;     // blank TX direct blast
-const BW_HZ       = 500;    // bandpass ±Hz around TX freq
+══════════════════════════════════════════════════ */
+const SOUND_SPEED = 343;
+const FFT_SIZE    = 8192;     // freq resolution ~5.8Hz/bin @48kHz
+const WINDOW_MS   = 400;      // RX listen window per ping
+const IGNORE_MS   = 18;       // blank direct-blast zone
+const BW_HZ       = 600;      // bandpass half-width
 
-/* ══════════════════════════════════════
+/* ══════════════════════════════════════════════════
    STATE
-══════════════════════════════════════ */
+══════════════════════════════════════════════════ */
 let actx = null, analyser = null;
-let busy = false, autoMode = false, autoTid = null;
-let traces   = [];   // last N echo curves for persistence display
-let wfRows   = [];   // waterfall
-const MAX_TRACES = 25;
-const MAX_WF     = 60;
+let running  = false;
+let vibOn    = true;
+let pingCnt  = 0;
+let loopTid  = null;
+let pingBusy = false;
 
-/* ══════════════════════════════════════
-   CANVAS
-══════════════════════════════════════ */
-const echoC = document.getElementById('echoCanvas');
-const echoX = echoC.getContext('2d');
-const wfC   = document.getElementById('wfCanvas');
-const wfX   = wfC.getContext('2d');
+// TX timeline: [{t_abs, freq, dur}]  — last 20 pings
+let txLog = [];
+const MAX_TX_LOG = 20;
 
+// RX echo curves: [{pts:[{t,snr}], tof, range}]
+let rxTraces = [];
+const MAX_RX = 15;
+
+// Live RX waveform ring buffer (time domain)
+const RX_RING_SIZE = 2048;
+let rxRing  = new Float32Array(RX_RING_SIZE);
+let rxRingI = 0;
+
+// Spectrum history (for waterfall effect on spectrum bar)
+let specBuf = null;  // will be Float32Array
+
+/* ══════════════════════════════════════════════════
+   CANVAS REFS
+══════════════════════════════════════════════════ */
+const txC = document.getElementById('txCanvas'),  txX = txC.getContext('2d');
+const rxC = document.getElementById('rxCanvas'),  rxX = rxC.getContext('2d');
+const spC = document.getElementById('specCanvas'),spX = spC.getContext('2d');
+
+/* ══════════════════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════════════════ */
 function layout() {
   requestAnimationFrame(() => {
-    const ep = document.getElementById('echoPanel');
-    echoC.width  = ep.clientWidth  || 360;
-    echoC.height = ep.clientHeight || 200;
-    const wf = document.getElementById('wfPanel');
-    wfC.width  = wf.clientWidth  || 360;
-    wfC.height = wf.clientHeight || 70;
-    redrawAll();
+    [['txPanel','txCanvas'],['rxPanel','rxCanvas'],['specPanel','specCanvas']].forEach(([pid,cid]) => {
+      const p = document.getElementById(pid);
+      const c = document.getElementById(cid);
+      c.width  = p.clientWidth  || 360;
+      c.height = p.clientHeight || 120;
+    });
+    drawTxPanel();
+    drawRxPanel();
+    drawSpectrum();
   });
 }
 window.addEventListener('resize', layout);
 
-/* ══════════════════════════════════════
+/* ══════════════════════════════════════════════════
    SLIDERS
-══════════════════════════════════════ */
-[['sFreq','vFreq'],['sPulse','vPulse'],['sThr','vThr']].forEach(([sid,vid]) => {
-  document.getElementById(sid).addEventListener('input', () => {
-    document.getElementById(vid).textContent = document.getElementById(sid).value;
+══════════════════════════════════════════════════ */
+[['sFreq','vFreq'],['sIntvl','vIntvl'],['sPulse','vPulse'],['sThr','vThr']].forEach(([s,v])=>{
+  document.getElementById(s).addEventListener('input', ()=>{
+    document.getElementById(v).textContent = document.getElementById(s).value;
   });
 });
 
-/* ══════════════════════════════════════
+/* ══════════════════════════════════════════════════
    AUDIO INIT
-══════════════════════════════════════ */
+══════════════════════════════════════════════════ */
 async function initAudio() {
   if (actx && analyser) return true;
   try {
-    // Request 48kHz if possible — better high-freq response
     actx = new (window.AudioContext || window.webkitAudioContext)({
       sampleRate: 48000,
       latencyHint: 'interactive'
@@ -211,82 +387,73 @@ async function initAudio() {
 
     const src = actx.createMediaStreamSource(stream);
 
-    // High-shelf boost for 17-19kHz before analysis
-    const hiShelf = actx.createBiquadFilter();
-    hiShelf.type = 'highshelf';
-    hiShelf.frequency.value = 16000;
-    hiShelf.gain.value = 12; // +12dB boost above 16kHz
+    // High-shelf +10dB above 15kHz to compensate mic rolloff
+    const hs = actx.createBiquadFilter();
+    hs.type = 'highshelf';
+    hs.frequency.value = 15000;
+    hs.gain.value = 10;
 
     analyser = actx.createAnalyser();
     analyser.fftSize = FFT_SIZE;
     analyser.smoothingTimeConstant = 0;
 
-    src.connect(hiShelf);
-    hiShelf.connect(analyser);
+    src.connect(hs);
+    hs.connect(analyser);
 
-    setStatus('on', 'READY');
-    setMsg('');
+    specBuf = new Float32Array(analyser.frequencyBinCount);
+    setStatus('on','READY');
     return true;
   } catch(e) {
-    setMsg('마이크 오류: ' + e.message);
-    setStatus('', 'ERROR');
+    toast('마이크 오류: ' + e.message, 4000);
+    setStatus('','ERROR');
     return false;
   }
 }
 
-/* ══════════════════════════════════════
-   TRANSMIT
-   Chirp sweep TX_FREQ ± 500Hz for better
-   correlation than pure tone
-══════════════════════════════════════ */
+/* ══════════════════════════════════════════════════
+   TRANSMIT  (chirp: center ± 400Hz)
+══════════════════════════════════════════════════ */
 function transmit(centerHz, durMs) {
+  if (!actx) return;
   const osc  = actx.createOscillator();
   const gain = actx.createGain();
   const t    = actx.currentTime;
   const dur  = durMs / 1000;
 
-  // Linear chirp: center-500 → center+500
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(centerHz - 500, t);
-  osc.frequency.linearRampToValueAtTime(centerHz + 500, t + dur);
+  osc.frequency.setValueAtTime(centerHz - 400, t);
+  osc.frequency.linearRampToValueAtTime(centerHz + 400, t + dur);
 
-  // Hanning window envelope
   gain.gain.setValueAtTime(0, t);
-  gain.gain.linearRampToValueAtTime(0.95, t + dur * 0.1);
-  gain.gain.setValueAtTime(0.95, t + dur * 0.9);
+  gain.gain.linearRampToValueAtTime(0.92, t + dur * 0.08);
+  gain.gain.setValueAtTime(0.92, t + dur * 0.92);
   gain.gain.linearRampToValueAtTime(0, t + dur);
 
   osc.connect(gain);
   gain.connect(actx.destination);
   osc.start(t);
-  osc.stop(t + dur + 0.005);
+  osc.stop(t + dur + 0.01);
 }
 
-/* ══════════════════════════════════════
-   BAND POWER
-   Mean linear power in [center-bw, center+bw]
-══════════════════════════════════════ */
-function bandPower(freqData, centerHz, bwHz, sr) {
+/* ══════════════════════════════════════════════════
+   BAND POWER  (FFT bins → mean linear power)
+══════════════════════════════════════════════════ */
+function bandPower(freqData, centerHz, bwHz) {
+  const sr    = actx.sampleRate;
   const binHz = sr / FFT_SIZE;
-  const b0 = Math.max(0,              Math.floor((centerHz - bwHz) / binHz));
+  const b0 = Math.max(0,               Math.floor((centerHz - bwHz) / binHz));
   const b1 = Math.min(freqData.length-1, Math.ceil((centerHz + bwHz) / binHz));
   let sum = 0;
-  for (let b = b0; b <= b1; b++) {
-    sum += Math.pow(10, freqData[b] / 10); // dB → linear power
-  }
+  for (let b = b0; b <= b1; b++) sum += Math.pow(10, freqData[b] / 10);
   return sum / Math.max(1, b1 - b0 + 1);
 }
 
-/* ══════════════════════════════════════
-   PING
-══════════════════════════════════════ */
+/* ══════════════════════════════════════════════════
+   SINGLE PING
+══════════════════════════════════════════════════ */
 async function doPing() {
-  if (busy) return;
-  if (!await initAudio()) return;
-
-  busy = true;
-  setBusy(true);
-  setMsg('');
+  if (pingBusy || !actx) return;
+  pingBusy = true;
 
   const freq    = parseInt(document.getElementById('sFreq').value);
   const pulseMs = parseInt(document.getElementById('sPulse').value);
@@ -294,65 +461,84 @@ async function doPing() {
   const sr      = actx.sampleRate;
 
   // ── TX ──
-  setStatus('tx', 'TX ▶');
+  pingCnt++;
+  txLog.push({ t: Date.now(), freq, dur: pulseMs });
+  if (txLog.length > MAX_TX_LOG) txLog.shift();
+  document.getElementById('svTxCnt').textContent = pingCnt;
+  document.getElementById('txBadge').textContent = freq + 'Hz';
+  setStatus('tx', 'TX');
+
   transmit(freq, pulseMs);
+  drawTxPanel(true);
 
-  // Wait: full pulse + guard time
-  await sleep(pulseMs + Math.max(20, pulseMs));
+  await sleep(pulseMs + Math.max(18, pulseMs * 0.8));
 
-  // ── MEASURE NOISE FLOOR (3 frames before RX) ──
-  setStatus('rx', 'RX ●');
-  const freqBuf = new Float32Array(analyser.frequencyBinCount);
+  // ── NOISE FLOOR (4 frames) ──
+  setStatus('rx', 'RX');
+  const fdBuf = new Float32Array(analyser.frequencyBinCount);
+  const tdBuf = new Float32Array(analyser.fftSize);
   let noiseAcc = 0;
-  const noiseFrames = 3;
-  for (let i = 0; i < noiseFrames; i++) {
+  for (let i = 0; i < 4; i++) {
     await nextFrame();
-    analyser.getFloatFrequencyData(freqBuf);
-    noiseAcc += bandPower(freqBuf, freq, BW_HZ, sr);
+    analyser.getFloatFrequencyData(fdBuf);
+    noiseAcc += bandPower(fdBuf, freq, BW_HZ);
   }
-  const noiseFloor = Math.max(noiseAcc / noiseFrames, 1e-12);
+  const noiseFloor = Math.max(noiseAcc / 4, 1e-12);
 
-  // ── COLLECT RX FRAMES ──
-  // ms per frame = FFT_SIZE / sampleRate * 1000
+  // ── RX COLLECT ──
   const msPerFrame = FFT_SIZE / sr * 1000;
   const nFrames    = Math.ceil(WINDOW_MS / msPerFrame);
-  const pts = []; // {t_ms, snr}
+  const pts = [];
 
   for (let i = 0; i < nFrames; i++) {
     await nextFrame();
-    analyser.getFloatFrequencyData(freqBuf);
-    const pw  = bandPower(freqBuf, freq, BW_HZ, sr);
-    const snr = pw / noiseFloor;
-    const t   = i * msPerFrame;
-    pts.push({ t, snr });
 
-    // Store waterfall row (copy)
-    wfRows.push(new Float32Array(freqBuf));
-    if (wfRows.length > MAX_WF) wfRows.shift();
+    // Freq domain → band SNR
+    analyser.getFloatFrequencyData(fdBuf);
+    const snr = bandPower(fdBuf, freq, BW_HZ) / noiseFloor;
+    pts.push({ t: i * msPerFrame, snr });
+
+    // Time domain → live waveform ring buffer
+    analyser.getFloatTimeDomainData(tdBuf);
+    for (let s = 0; s < tdBuf.length; s++) {
+      rxRing[rxRingI % RX_RING_SIZE] = tdBuf[s];
+      rxRingI++;
+    }
+
+    // Update spectrum
+    specBuf.set(fdBuf);
+    drawSpectrum(freq);
+    drawRxLive();
   }
 
-  processEcho(pts, thrMult, freq, sr);
+  // ── PROCESS ECHO ──
+  const result = processEcho(pts, thrMult, noiseFloor);
 
-  busy = false;
-  setBusy(false);
-  setStatus('on', 'READY');
+  // ── UPDATE TX PANEL ──
+  drawTxPanel(false);
+
+  pingBusy = false;
+  if (running) setStatus('on', 'WAIT');
+  else         setStatus('on', 'READY');
+
+  return result;
 }
 
-/* ══════════════════════════════════════
+/* ══════════════════════════════════════════════════
    PROCESS ECHO
-══════════════════════════════════════ */
-function processEcho(pts, thrMult, freq, sr) {
-  // 3-point smoothing
+══════════════════════════════════════════════════ */
+function processEcho(pts, thrMult, noiseFloor) {
+  // Weighted smooth
   const sm = pts.map((p, i) => {
-    const a = pts[Math.max(0, i-1)].snr;
+    const a = pts[Math.max(0,i-1)].snr;
     const b = p.snr;
-    const c = pts[Math.min(pts.length-1, i+1)].snr;
-    return { t: p.t, snr: (a + b*2 + c) / 4 }; // weighted centre
+    const c = pts[Math.min(pts.length-1,i+1)].snr;
+    return { t: p.t, snr: (a + b*2 + c)/4 };
   });
 
-  const maxSnr = Math.max(...sm.map(p => p.snr), 1);
+  const maxSnr = Math.max(...sm.map(p=>p.snr), 1);
 
-  // First peak above (noiseFloor × thrMult) after IGNORE_MS
+  // First peak above threshold after ignore zone
   let echoPt = null;
   for (const p of sm) {
     if (p.t < IGNORE_MS) continue;
@@ -360,287 +546,531 @@ function processEcho(pts, thrMult, freq, sr) {
   }
 
   const tof   = echoPt ? echoPt.t : null;
-  const range = tof    ? (tof / 1000) * SOUND_SPEED / 2 : null;
-  const snrDb = echoPt ? (10 * Math.log10(echoPt.snr)).toFixed(1) : null;
-  const conf  = echoPt ? Math.min(100, Math.round((echoPt.snr / maxSnr) * 100)) : 0;
+  const range = tof    ? (tof/1000)*SOUND_SPEED/2 : null;
+  const snrDb = echoPt ? (10*Math.log10(echoPt.snr)).toFixed(1) : null;
 
-  // Update UI
+  // Update stats
   const rv = document.getElementById('svRange');
   if (range !== null && range < 20) {
-    rv.textContent = range.toFixed(2) + 'm';
-    document.getElementById('rangeMarker').textContent = range.toFixed(2) + 'm';
-    rv.classList.toggle('hi', range < 1.0);
+    rv.textContent = range.toFixed(2)+'m';
+    rv.classList.toggle('hi', range < 1.5);
+    document.getElementById('rxBadge').textContent = range.toFixed(2)+'m';
   } else {
     rv.textContent = 'N/D';
-    document.getElementById('rangeMarker').textContent = '—';
     rv.classList.remove('hi');
+    document.getElementById('rxBadge').textContent = '—';
   }
   document.getElementById('svTof').textContent  = tof   ? tof.toFixed(1)+'ms' : '—';
   document.getElementById('svSnr').textContent  = snrDb ? snrDb+'dB'          : '—';
-  document.getElementById('svConf').textContent = echoPt ? conf+'%'           : '—';
+  document.getElementById('svDet').textContent  = echoPt ? 'YES' : 'NO';
+  document.getElementById('svDet').classList.toggle('hi', !!echoPt);
 
-  if (!echoPt) {
-    setMsg('에코 미감지 — THRESHOLD를 낮추거나 TX FREQ 변경');
-  } else {
-    setMsg('');
+  // Vibrate on detection
+  if (echoPt && vibOn && range < 5) {
+    const pattern = range < 1 ? [80,40,80] : range < 2 ? [60] : [30];
+    if (navigator.vibrate) navigator.vibrate(pattern);
+    document.getElementById('vibIcon').classList.add('on');
+    setTimeout(()=>document.getElementById('vibIcon').classList.remove('on'), 400);
   }
 
-  // Store normalised trace
-  traces.push(sm.map(p => ({ t: p.t, v: p.snr / maxSnr })));
-  if (traces.length > MAX_TRACES) traces.shift();
+  // Store trace
+  rxTraces.push({ pts: sm, tof, range, maxSnr });
+  if (rxTraces.length > MAX_RX) rxTraces.shift();
 
-  drawEcho(sm, maxSnr, tof, thrMult);
-  drawWaterfall(freq, sr);
+  drawRxEcho(sm, maxSnr, tof, thrMult);
+  return { tof, range };
 }
 
-/* ══════════════════════════════════════
-   DRAW: ECHO
-══════════════════════════════════════ */
-function drawEcho(pts, maxSnr, tofMs, thrMult) {
-  const W = echoC.width, H = echoC.height;
-  echoX.clearRect(0, 0, W, H);
+/* ══════════════════════════════════════════════════
+   DRAW: TX PANEL
+   Shows TX timing pulses as vertical bars on timeline
+══════════════════════════════════════════════════ */
+function drawTxPanel(firing) {
+  const W = txC.width, H = txC.height;
+  txX.clearRect(0, 0, W, H);
+
+  // Background grid
+  txX.strokeStyle = 'rgba(0,60,20,0.3)';
+  txX.lineWidth = 1;
+  for (let i=0; i<=10; i++) {
+    const x = i/10*W;
+    txX.beginPath(); txX.moveTo(x,0); txX.lineTo(x,H); txX.stroke();
+  }
+  // Zero line
+  txX.strokeStyle = 'rgba(0,120,50,0.5)';
+  txX.beginPath(); txX.moveTo(0,H*0.7); txX.lineTo(W,H*0.7); txX.stroke();
+
+  if (!txLog.length) {
+    txX.fillStyle = 'rgba(0,120,50,0.35)';
+    txX.font = '10px Share Tech Mono';
+    txX.textAlign = 'center';
+    txX.fillText('START 버튼을 눌러 송신 시작', W/2, H/2+4);
+    return;
+  }
+
+  const now      = Date.now();
+  const intvlMs  = parseInt(document.getElementById('sIntvl').value);
+  const viewMs   = Math.max(intvlMs * 4, 3000); // show last N ms
+  const tLeft    = now - viewMs;
+
+  // Time axis labels
+  txX.fillStyle = 'rgba(0,120,50,0.5)';
+  txX.font = '8px Share Tech Mono';
+  txX.textAlign = 'center';
+  for (let i=0; i<=4; i++) {
+    const ms  = viewMs * i / 4;
+    const x   = (i/4)*W;
+    txX.fillText((viewMs/4*(4-i)/1000).toFixed(1)+'s', x, H-2);
+  }
+
+  // Draw TX pulses
+  txLog.forEach((tx, idx) => {
+    const age = now - tx.t;
+    if (age > viewMs) return;
+    const x   = (1 - age/viewMs) * W;
+    const pxW = Math.max(3, (tx.dur/viewMs)*W);
+    const alpha = Math.max(0.15, 1 - age/viewMs);
+
+    // Pulse bar
+    const barH = H * 0.65;
+    txX.fillStyle = `rgba(255,184,0,${alpha * 0.25})`;
+    txX.fillRect(x, H*0.7-barH, pxW, barH);
+
+    txX.strokeStyle = `rgba(255,184,0,${alpha})`;
+    txX.lineWidth = alpha > 0.5 ? 2 : 1;
+    txX.strokeRect(x, H*0.7-barH, pxW, barH);
+
+    // Freq label on most recent
+    if (idx === txLog.length-1 && alpha > 0.4) {
+      txX.fillStyle = `rgba(255,184,0,${alpha})`;
+      txX.font = '8px Share Tech Mono';
+      txX.textAlign = 'left';
+      txX.fillText(tx.freq+'Hz', x+2, H*0.7-barH-3);
+    }
+  });
+
+  // Interval ruler
+  txX.strokeStyle = 'rgba(0,200,100,0.2)';
+  txX.lineWidth = 1;
+  txX.setLineDash([2,4]);
+  const intvlX = (intvlMs/viewMs)*W;
+  if (intvlX < W) {
+    const lastTx = txLog[txLog.length-1];
+    const lastX  = (1 - (now-lastTx.t)/viewMs)*W;
+    // Next expected ping line
+    const nextX = lastX + intvlX;
+    if (nextX < W) {
+      txX.beginPath(); txX.moveTo(nextX,0); txX.lineTo(nextX,H); txX.stroke();
+      txX.fillStyle='rgba(0,180,80,0.4)';
+      txX.font='8px Share Tech Mono';
+      txX.textAlign='left';
+      txX.fillText('next', nextX+2, 12);
+    }
+  }
+  txX.setLineDash([]);
+
+  // Firing flash
+  if (firing) {
+    txX.fillStyle = 'rgba(255,184,0,0.12)';
+    txX.fillRect(0,0,W,H);
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   DRAW: RX LIVE WAVEFORM  (time domain ring buffer)
+══════════════════════════════════════════════════ */
+function drawRxLive() {
+  const W = rxC.width, H = rxC.height;
+  // Draw on top half only (bottom half = echo envelope)
+  const halfH = Math.floor(H * 0.45);
+  rxX.clearRect(0, 0, W, halfH);
 
   // Grid
-  echoX.strokeStyle = 'rgba(0,60,20,0.35)';
-  echoX.lineWidth = 1;
-  for (let i = 0; i <= 10; i++) {
-    const x = (i / 10) * W;
-    echoX.beginPath(); echoX.moveTo(x,0); echoX.lineTo(x,H); echoX.stroke();
+  rxX.strokeStyle = 'rgba(0,60,20,0.3)';
+  rxX.lineWidth = 1;
+  for (let i=0;i<=8;i++) {
+    rxX.beginPath(); rxX.moveTo(i/8*W,0); rxX.lineTo(i/8*W,halfH); rxX.stroke();
   }
-  for (let i = 0; i <= 4; i++) {
-    const y = (i / 4) * H;
-    echoX.beginPath(); echoX.moveTo(0,y); echoX.lineTo(W,y); echoX.stroke();
+  rxX.strokeStyle = 'rgba(0,60,20,0.4)';
+  rxX.beginPath(); rxX.moveTo(0,halfH/2); rxX.lineTo(W,halfH/2); rxX.stroke();
+
+  // Waveform from ring buffer
+  const disp = Math.min(RX_RING_SIZE, W * 2);
+  rxX.beginPath();
+  rxX.strokeStyle = '#00ff88';
+  rxX.lineWidth = 1.2;
+  rxX.shadowBlur = 3; rxX.shadowColor = '#00ff88';
+  for (let i = 0; i < disp; i++) {
+    const idx = (rxRingI - disp + i + RX_RING_SIZE) % RX_RING_SIZE;
+    const v   = rxRing[idx];
+    const x   = (i / disp) * W;
+    const y   = halfH/2 - v * (halfH/2 - 2);
+    i === 0 ? rxX.moveTo(x,y) : rxX.lineTo(x,y);
+  }
+  rxX.stroke();
+  rxX.shadowBlur = 0;
+
+  // Label
+  rxX.fillStyle = 'rgba(0,100,50,0.6)';
+  rxX.font = '7px Share Tech Mono';
+  rxX.textAlign = 'left';
+  rxX.fillText('TIME DOMAIN', 4, 11);
+}
+
+/* ══════════════════════════════════════════════════
+   DRAW: RX ECHO ENVELOPE (bottom half of RX panel)
+══════════════════════════════════════════════════ */
+function drawRxEcho(pts, maxSnr, tofMs, thrMult) {
+  const W = rxC.width, H = rxC.height;
+  const top = Math.floor(H * 0.5);
+  const hh  = H - top;
+
+  rxX.clearRect(0, top, W, hh);
+
+  // Divider
+  rxX.strokeStyle = 'rgba(0,100,40,0.4)';
+  rxX.lineWidth = 1;
+  rxX.beginPath(); rxX.moveTo(0,top); rxX.lineTo(W,top); rxX.stroke();
+
+  // Grid
+  rxX.strokeStyle = 'rgba(0,50,20,0.3)';
+  for (let i=0;i<=10;i++) {
+    const x=(i/10)*W;
+    rxX.beginPath(); rxX.moveTo(x,top); rxX.lineTo(x,H); rxX.stroke();
   }
 
-  // Range axis labels
-  echoX.fillStyle = 'rgba(0,120,60,0.7)';
-  echoX.font = '8px Share Tech Mono';
-  echoX.textAlign = 'center';
-  for (let i = 1; i <= 10; i++) {
-    const tMs  = WINDOW_MS * i / 10;
-    const dist = (tMs / 1000) * SOUND_SPEED / 2;
-    if (dist < 100) echoX.fillText(dist.toFixed(1)+'m', (i/10)*W, H-3);
+  // Range axis
+  rxX.fillStyle = 'rgba(0,120,55,0.6)';
+  rxX.font = '7px Share Tech Mono';
+  rxX.textAlign = 'center';
+  for (let i=1;i<=5;i++) {
+    const tMs  = WINDOW_MS*i/5;
+    const dist = (tMs/1000)*SOUND_SPEED/2;
+    rxX.fillText(dist.toFixed(1)+'m', (i/5)*W, H-2);
   }
 
-  if (!pts || !pts.length) {
-    echoX.fillStyle = 'rgba(0,150,70,0.4)';
-    echoX.font = '11px Share Tech Mono';
-    echoX.textAlign = 'center';
-    echoX.fillText('PING 버튼을 눌러 시작', W/2, H/2);
-    return;
-  }
+  if (!pts || !pts.length) return;
 
-  // Older traces (persistence / afterglow)
-  for (let ti = 0; ti < traces.length - 1; ti++) {
-    const age = traces.length - 1 - ti;
-    const alpha = Math.max(0, 0.3 - age * 0.012);
-    if (alpha <= 0) continue;
-    const tr = traces[ti];
-    echoX.beginPath();
-    echoX.strokeStyle = `rgba(0,255,136,${alpha})`;
-    echoX.lineWidth = 1;
-    for (let j = 0; j < tr.length; j++) {
-      const px = (tr[j].t / WINDOW_MS) * W;
-      const py = H - tr[j].v * (H - 14) - 7;
-      j === 0 ? echoX.moveTo(px, py) : echoX.lineTo(px, py);
+  // Old traces
+  for (let ti=0; ti<rxTraces.length-1; ti++) {
+    const age   = rxTraces.length-1-ti;
+    const alpha = Math.max(0, 0.25 - age*0.018);
+    if (alpha<=0) continue;
+    const tr = rxTraces[ti];
+    rxX.beginPath();
+    rxX.strokeStyle = `rgba(0,200,100,${alpha})`;
+    rxX.lineWidth = 1;
+    for (let j=0;j<tr.pts.length;j++) {
+      const px = (tr.pts[j].t/WINDOW_MS)*W;
+      const py = H - (tr.pts[j].snr/tr.maxSnr)*(hh-8)-4;
+      j===0 ? rxX.moveTo(px,py) : rxX.lineTo(px,py);
     }
-    echoX.stroke();
+    rxX.stroke();
   }
 
-  // TX ignore zone
-  const ignX = (IGNORE_MS / WINDOW_MS) * W;
-  echoX.fillStyle = 'rgba(255,60,60,0.05)';
-  echoX.fillRect(0, 0, ignX, H);
-  echoX.strokeStyle = 'rgba(255,80,80,0.25)';
-  echoX.lineWidth = 1;
-  echoX.setLineDash([3,3]);
-  echoX.beginPath(); echoX.moveTo(ignX,0); echoX.lineTo(ignX,H); echoX.stroke();
-  echoX.setLineDash([]);
+  // Ignore zone
+  const ignX = (IGNORE_MS/WINDOW_MS)*W;
+  rxX.fillStyle = 'rgba(255,60,60,0.06)';
+  rxX.fillRect(0, top, ignX, hh);
+  rxX.strokeStyle = 'rgba(255,80,80,0.2)';
+  rxX.lineWidth = 1;
+  rxX.setLineDash([2,3]);
+  rxX.beginPath(); rxX.moveTo(ignX,top); rxX.lineTo(ignX,H); rxX.stroke();
+  rxX.setLineDash([]);
 
-  // Threshold line (SNR = thrMult, normalised)
-  const thrNorm = Math.min(thrMult / maxSnr, 1);
-  const thrY = H - thrNorm * (H - 14) - 7;
-  echoX.strokeStyle = 'rgba(255,184,0,0.45)';
-  echoX.lineWidth = 1;
-  echoX.setLineDash([5,4]);
-  echoX.beginPath(); echoX.moveTo(0,thrY); echoX.lineTo(W,thrY); echoX.stroke();
-  echoX.setLineDash([]);
-  echoX.fillStyle = 'rgba(255,184,0,0.6)';
-  echoX.font = '8px Share Tech Mono';
-  echoX.textAlign = 'left';
-  echoX.fillText('THR', 4, thrY - 3);
+  // Threshold line
+  const thrN = Math.min(thrMult/maxSnr,1);
+  const thrY = H - thrN*(hh-8)-4;
+  rxX.strokeStyle = 'rgba(255,184,0,0.4)';
+  rxX.lineWidth = 1;
+  rxX.setLineDash([4,4]);
+  rxX.beginPath(); rxX.moveTo(0,thrY); rxX.lineTo(W,thrY); rxX.stroke();
+  rxX.setLineDash([]);
 
-  // Current trace fill
-  echoX.beginPath();
-  echoX.moveTo(0, H);
-  for (let i = 0; i < pts.length; i++) {
-    const px = (pts[i].t / WINDOW_MS) * W;
-    const py = H - (pts[i].snr / maxSnr) * (H - 14) - 7;
-    echoX.lineTo(px, py);
+  // Fill
+  rxX.beginPath();
+  rxX.moveTo(0, H);
+  for (let i=0;i<pts.length;i++) {
+    const px = (pts[i].t/WINDOW_MS)*W;
+    const py = H - (pts[i].snr/maxSnr)*(hh-8)-4;
+    rxX.lineTo(px,py);
   }
-  echoX.lineTo(W, H);
-  echoX.closePath();
-  const fg = echoX.createLinearGradient(0, 0, 0, H);
-  fg.addColorStop(0, 'rgba(0,255,136,0.45)');
-  fg.addColorStop(1, 'rgba(0,255,136,0.02)');
-  echoX.fillStyle = fg;
-  echoX.fill();
+  rxX.lineTo(W,H);
+  rxX.closePath();
+  const fg = rxX.createLinearGradient(0,top,0,H);
+  fg.addColorStop(0,'rgba(0,255,136,0.4)');
+  fg.addColorStop(1,'rgba(0,255,136,0.02)');
+  rxX.fillStyle = fg;
+  rxX.fill();
 
-  // Current trace line
-  echoX.beginPath();
-  echoX.strokeStyle = '#00ff88';
-  echoX.lineWidth = 2;
-  echoX.shadowBlur = 6; echoX.shadowColor = '#00ff88';
-  for (let i = 0; i < pts.length; i++) {
-    const px = (pts[i].t / WINDOW_MS) * W;
-    const py = H - (pts[i].snr / maxSnr) * (H - 14) - 7;
-    i === 0 ? echoX.moveTo(px, py) : echoX.lineTo(px, py);
+  // Line
+  rxX.beginPath();
+  rxX.strokeStyle = '#00ff88';
+  rxX.lineWidth = 1.8;
+  rxX.shadowBlur = 5; rxX.shadowColor = '#00ff88';
+  for (let i=0;i<pts.length;i++) {
+    const px = (pts[i].t/WINDOW_MS)*W;
+    const py = H - (pts[i].snr/maxSnr)*(hh-8)-4;
+    i===0 ? rxX.moveTo(px,py) : rxX.lineTo(px,py);
   }
-  echoX.stroke();
-  echoX.shadowBlur = 0;
+  rxX.stroke();
+  rxX.shadowBlur = 0;
 
-  // TOF / echo marker
+  // TOF marker
   if (tofMs !== null) {
-    const tx = (tofMs / WINDOW_MS) * W;
-    // Vertical line
-    echoX.strokeStyle = '#ffb800';
-    echoX.lineWidth = 2;
-    echoX.shadowBlur = 8; echoX.shadowColor = '#ffb800';
-    echoX.setLineDash([3,3]);
-    echoX.beginPath(); echoX.moveTo(tx,0); echoX.lineTo(tx,H); echoX.stroke();
-    echoX.setLineDash([]);
-    echoX.shadowBlur = 0;
-    // Label
-    const range = (tofMs / 1000) * SOUND_SPEED / 2;
-    echoX.fillStyle = '#ffb800';
-    echoX.font = 'bold 10px Share Tech Mono';
-    echoX.textAlign = tx > W * 0.72 ? 'right' : 'left';
-    echoX.fillText('◆ ' + range.toFixed(2) + 'm', tx + (tx > W*0.72 ? -5 : 5), 18);
-    // Dot at peak
-    const peakPt = pts.find(p => Math.abs(p.t - tofMs) < (WINDOW_MS / pts.length) * 1.5);
-    if (peakPt) {
-      const py = H - (peakPt.snr / maxSnr) * (H - 14) - 7;
-      echoX.beginPath(); echoX.arc(tx, py, 5, 0, Math.PI*2);
-      echoX.fillStyle = '#ffb800';
-      echoX.shadowBlur = 10; echoX.shadowColor = '#ffb800';
-      echoX.fill(); echoX.shadowBlur = 0;
-    }
+    const tx    = (tofMs/WINDOW_MS)*W;
+    const range = (tofMs/1000)*SOUND_SPEED/2;
+    rxX.strokeStyle = '#ffb800';
+    rxX.lineWidth = 2;
+    rxX.shadowBlur = 7; rxX.shadowColor = '#ffb800';
+    rxX.setLineDash([3,3]);
+    rxX.beginPath(); rxX.moveTo(tx,top); rxX.lineTo(tx,H); rxX.stroke();
+    rxX.setLineDash([]);
+    rxX.shadowBlur = 0;
+    rxX.fillStyle = '#ffb800';
+    rxX.font = 'bold 9px Share Tech Mono';
+    rxX.textAlign = tx>W*0.7?'right':'left';
+    rxX.fillText('◆ '+range.toFixed(2)+'m', tx+(tx>W*0.7?-4:4), top+12);
   }
+
+  // Label
+  rxX.fillStyle = 'rgba(0,100,50,0.6)';
+  rxX.font = '7px Share Tech Mono';
+  rxX.textAlign = 'left';
+  rxX.fillText('ECHO ENVELOPE · SNR', 4, top+10);
 }
 
-/* ══════════════════════════════════════
-   DRAW: WATERFALL
-══════════════════════════════════════ */
-function drawWaterfall(txFreq, sr) {
-  const W = wfC.width, H = wfC.height;
-  wfX.clearRect(0, 0, W, H);
+/* ══════════════════════════════════════════════════
+   DRAW: FULL SPECTRUM  (20Hz – Nyquist)
+   두 영역 색상 구분:
+   가청(20Hz~20kHz) = 초록 계열
+   초음파(20kHz+)   = 파란 계열
+   TX 주파수         = 황색 마커
+══════════════════════════════════════════════════ */
+function drawSpectrum(txFreq) {
+  const W = spC.width, H = spC.height;
+  spX.clearRect(0, 0, W, H);
 
-  if (!wfRows.length) {
-    wfX.fillStyle = 'rgba(0,80,40,0.5)';
-    wfX.font = '9px Share Tech Mono';
-    wfX.textAlign = 'center';
-    wfX.fillText('AWAITING SIGNAL', W/2, H/2+3);
+  const sr    = actx ? actx.sampleRate : 48000;
+  const nyq   = sr / 2;        // max displayable freq
+  const binHz = sr / FFT_SIZE;
+
+  // Background grid
+  spX.strokeStyle = 'rgba(0,60,20,0.3)';
+  spX.lineWidth = 1;
+  // Freq markers: 100Hz, 500Hz, 1k, 2k, 4k, 8k, 12k, 16k, 20k
+  const markers = [100,200,500,1000,2000,4000,8000,12000,16000,20000];
+  markers.forEach(f => {
+    if (f > nyq) return;
+    const x = (f / nyq) * W;
+    spX.beginPath(); spX.moveTo(x,0); spX.lineTo(x,H); spX.stroke();
+    spX.fillStyle = 'rgba(0,120,50,0.55)';
+    spX.font = '7px Share Tech Mono';
+    spX.textAlign = 'center';
+    const label = f>=1000 ? (f/1000)+'k' : f+'';
+    spX.fillText(label, x, H-2);
+  });
+
+  if (!specBuf) {
+    spX.fillStyle = 'rgba(0,120,50,0.35)';
+    spX.font = '10px Share Tech Mono';
+    spX.textAlign = 'center';
+    spX.fillText('START 후 스펙트럼 표시', W/2, H/2+4);
     return;
   }
 
-  const freq  = txFreq || parseInt(document.getElementById('sFreq').value);
-  const rate  = sr     || (actx ? actx.sampleRate : 48000);
-  const bins  = wfRows[0].length;
-  const binHz = rate / FFT_SIZE;
-  const span  = 3000;
-  const bMin  = Math.max(0,      Math.floor((freq - span) / binHz));
-  const bMax  = Math.min(bins-1, Math.ceil( (freq + span) / binHz));
-  const bSpan = bMax - bMin;
-  const rowH  = Math.max(1, H / wfRows.length);
+  const bins = specBuf.length; // frequencyBinCount = FFT_SIZE/2
 
-  for (let r = 0; r < wfRows.length; r++) {
-    const row = wfRows[r];
-    const y   = H - (r + 1) * rowH;
-    for (let b = 0; b < bSpan; b++) {
-      const bi   = Math.min(bMin + b, row.length - 1);
-      const db   = row[bi];
-      const norm = Math.min(1, Math.max(0, (db + 80) / 60));
-      const bx   = (b / bSpan) * W;
-      const bw   = W / bSpan + 1;
-      let R, G, B;
-      if (norm < 0.4)      { R=0; G=Math.floor(norm/0.4*160); B=0; }
-      else if (norm < 0.7) { const t=(norm-0.4)/0.3; R=0; G=Math.floor(160+t*80); B=Math.floor(t*80); }
-      else                 { const t=(norm-0.7)/0.3; R=Math.floor(t*240); G=Math.floor(240+t*15); B=Math.floor(80+t*120); }
-      wfX.fillStyle = `rgb(${R},${G},${B})`;
-      wfX.fillRect(bx, y, bw, rowH + 1);
+  // Draw spectrum bars
+  const barW = Math.max(1, W / bins * 4); // not all bins shown, subsample
+  const step = Math.max(1, Math.floor(bins / W));
+
+  for (let b = 0; b < bins; b += step) {
+    const f    = b * binHz;
+    if (f > nyq) break;
+    const x    = (f / nyq) * W;
+    const db   = specBuf[b];
+    const norm = Math.min(1, Math.max(0, (db + 90) / 75));
+    const barH = norm * (H - 14);
+
+    // Color: 가청 영역(< 20kHz) = green, 초음파(≥ 20kHz) = cyan
+    let R, G, B;
+    if (f < 20000) {
+      // green gradient by amplitude
+      if (norm < 0.5) { R=0; G=Math.floor(norm*2*180); B=0; }
+      else { const t=(norm-0.5)*2; R=Math.floor(t*80); G=Math.floor(180+t*75); B=Math.floor(t*40); }
+    } else {
+      // cyan for ultrasonic
+      if (norm < 0.5) { R=0; G=Math.floor(norm*2*150); B=Math.floor(norm*2*200); }
+      else { const t=(norm-0.5)*2; R=Math.floor(t*100); G=Math.floor(150+t*80); B=Math.floor(200+t*55); }
     }
+
+    spX.fillStyle = `rgb(${R},${G},${B})`;
+    spX.fillRect(x, H-14-barH, Math.max(1, (step*binHz/nyq)*W*1.2), barH);
   }
 
-  // TX freq centre line
-  wfX.strokeStyle = 'rgba(255,184,0,0.7)';
-  wfX.lineWidth = 1.5;
-  wfX.setLineDash([2,3]);
-  wfX.beginPath(); wfX.moveTo(W/2, 0); wfX.lineTo(W/2, H); wfX.stroke();
-  wfX.setLineDash([]);
+  // 가청/초음파 경계선 (20kHz)
+  const boundX = (20000 / nyq) * W;
+  if (boundX < W) {
+    spX.strokeStyle = 'rgba(0,200,255,0.5)';
+    spX.lineWidth = 1.5;
+    spX.setLineDash([3,3]);
+    spX.beginPath(); spX.moveTo(boundX,0); spX.lineTo(boundX,H-12); spX.stroke();
+    spX.setLineDash([]);
+    spX.fillStyle = 'rgba(0,200,255,0.6)';
+    spX.font = '7px Share Tech Mono';
+    spX.textAlign = 'left';
+    spX.fillText('20k', boundX+2, 10);
+  }
+
+  // TX freq marker (amber)
+  const txF = txFreq || parseInt(document.getElementById('sFreq').value);
+  const txX_ = (txF / nyq) * W;
+  spX.strokeStyle = 'rgba(255,184,0,0.9)';
+  spX.lineWidth = 2;
+  spX.shadowBlur = 6; spX.shadowColor = '#ffb800';
+  spX.beginPath(); spX.moveTo(txX_,0); spX.lineTo(txX_,H-12); spX.stroke();
+  spX.shadowBlur = 0;
+  spX.fillStyle = '#ffb800';
+  spX.font = 'bold 7px Share Tech Mono';
+  spX.textAlign = txX_>W*0.85?'right':'left';
+  spX.fillText('TX', txX_+(txX_>W*0.85?-3:3), 10);
+
+  // dB scale on Y axis
+  spX.fillStyle = 'rgba(0,120,50,0.5)';
+  spX.font = '7px Share Tech Mono';
+  spX.textAlign = 'right';
+  spX.fillText('-90dB', W-2, H-15);
+  spX.fillText('-15dB', W-2, 10);
 }
 
-/* ══════════════════════════════════════
+/* ══════════════════════════════════════════════════
+   MAIN LOOP
+══════════════════════════════════════════════════ */
+async function startLoop() {
+  if (!await initAudio()) return;
+  running = true;
+  document.getElementById('btnFire').textContent = '■ STOP';
+  document.getElementById('btnFire').classList.add('on');
+  setStatus('on','ACTIVE');
+
+  // Realtime spectrum animation (even between pings)
+  startSpecAnim();
+
+  const intvlMs = () => parseInt(document.getElementById('sIntvl').value);
+
+  async function loop() {
+    if (!running) return;
+    await doPing();
+    if (running) loopTid = setTimeout(loop, intvlMs());
+  }
+  loop();
+}
+
+function stopLoop() {
+  running = false;
+  if (loopTid) { clearTimeout(loopTid); loopTid = null; }
+  document.getElementById('btnFire').textContent = '▶ START';
+  document.getElementById('btnFire').classList.remove('on');
+  setStatus('on','READY');
+  stopSpecAnim();
+}
+
+/* ══════════════════════════════════════════════════
+   SPECTRUM REALTIME ANIMATION (between pings too)
+══════════════════════════════════════════════════ */
+let specAnimId = null;
+function startSpecAnim() {
+  if (specAnimId) return;
+  const fdBuf = new Float32Array(analyser ? analyser.frequencyBinCount : FFT_SIZE/2);
+  function frame() {
+    if (!running) { specAnimId = null; return; }
+    if (analyser) {
+      analyser.getFloatFrequencyData(fdBuf);
+      specBuf = fdBuf;
+    }
+    drawSpectrum();
+    drawTxPanel(false);
+    specAnimId = requestAnimationFrame(frame);
+  }
+  specAnimId = requestAnimationFrame(frame);
+}
+function stopSpecAnim() {
+  if (specAnimId) { cancelAnimationFrame(specAnimId); specAnimId = null; }
+}
+
+/* ══════════════════════════════════════════════════
    HELPERS
-══════════════════════════════════════ */
+══════════════════════════════════════════════════ */
 function nextFrame() { return new Promise(r => requestAnimationFrame(r)); }
 function sleep(ms)   { return new Promise(r => setTimeout(r, ms)); }
+
 function setStatus(cls, txt) {
   document.getElementById('dot').className = cls;
   document.getElementById('stxt').textContent = txt;
 }
-function setMsg(m) { document.getElementById('msg').textContent = m; }
-function setBusy(on) {
-  const b = document.getElementById('btnFire');
-  b.classList.toggle('busy', on);
-  b.textContent = on ? '● MEASURING' : '▶ PING';
-}
-function redrawAll() {
-  drawEcho(null, 1, null, 3);
-  drawWaterfall();
+
+let toastTid = null;
+function toast(msg, dur=2000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (toastTid) clearTimeout(toastTid);
+  toastTid = setTimeout(()=>el.classList.remove('show'), dur);
 }
 
-/* ══════════════════════════════════════
-   AUTO MODE
-══════════════════════════════════════ */
-document.getElementById('btnAuto').addEventListener('click', () => {
-  autoMode = !autoMode;
-  document.getElementById('btnAuto').classList.toggle('on', autoMode);
-  if (autoTid) { clearInterval(autoTid); autoTid = null; }
-  if (autoMode) {
-    autoTid = setInterval(() => { if (!busy) doPing(); }, WINDOW_MS + 600);
-  }
+function redrawAll() {
+  drawTxPanel(false);
+  drawRxLive();
+  drawSpectrum();
+}
+
+/* ══════════════════════════════════════════════════
+   BUTTON EVENTS
+══════════════════════════════════════════════════ */
+let firePending = false;
+document.getElementById('btnFire').addEventListener('pointerdown', async e => {
+  e.preventDefault();
+  if (firePending) return;
+  firePending = true;
+  if (!running) await startLoop();
+  else           stopLoop();
+  firePending = false;
 });
 
-document.getElementById('btnClear').addEventListener('click', () => {
-  traces = []; wfRows = [];
-  ['svRange','svTof','svSnr','svConf'].forEach(id => {
+document.getElementById('btnVib').addEventListener('click', () => {
+  vibOn = !vibOn;
+  document.getElementById('btnVib').classList.toggle('on', vibOn);
+  if (vibOn && navigator.vibrate) navigator.vibrate(50);
+  toast(vibOn ? '진동 알림 ON' : '진동 알림 OFF');
+});
+
+document.getElementById('btnClr').addEventListener('click', () => {
+  rxTraces = []; txLog = [];
+  rxRing.fill(0); rxRingI = 0;
+  pingCnt = 0;
+  ['svRange','svTof','svSnr','svDet'].forEach(id => {
     document.getElementById(id).textContent = '—';
     document.getElementById(id).classList.remove('hi');
   });
-  document.getElementById('rangeMarker').textContent = '—';
-  setMsg('');
+  document.getElementById('svTxCnt').textContent = '0';
+  document.getElementById('txBadge').textContent = '—';
+  document.getElementById('rxBadge').textContent = '—';
   redrawAll();
 });
 
-/* ══════════════════════════════════════
-   FIRE BUTTON
-══════════════════════════════════════ */
-let fp = false;
-document.getElementById('btnFire').addEventListener('pointerdown', async e => {
-  e.preventDefault();
-  if (fp || busy) return;
-  fp = true;
-  await doPing();
-  fp = false;
-});
+/* ══════════════════════════════════════════════════
+   VIB BUTTON DEFAULT ON
+══════════════════════════════════════════════════ */
+document.getElementById('btnVib').classList.add('on');
 
-/* ══════════════════════════════════════
+/* ══════════════════════════════════════════════════
    INIT
-══════════════════════════════════════ */
+══════════════════════════════════════════════════ */
 layout();
 
 if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-  setMsg('⚠ HTTPS / localhost 환경에서만 마이크 사용 가능');
+  setTimeout(()=>toast('⚠ HTTPS / localhost 환경에서만 마이크 사용 가능', 5000), 500);
 }
 </script>
 </body>
