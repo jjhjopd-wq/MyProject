@@ -1,0 +1,57 @@
+name: Lance Breitstein KRX Screener
+
+on:
+  schedule:
+    - cron: "50 23 * * 0-4"
+
+  workflow_dispatch:
+    inputs:
+      min_grade:
+        description: "최소 등급 필터 (A+/A/B/C)"
+        required: false
+        default: "B"
+      max_tickers:
+        description: "스캔할 최대 종목 수"
+        required: false
+        default: "300"
+
+jobs:
+  run-screener:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 📥 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 🐍 Python 3.11 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 📦 패키지 설치
+        run: pip install -r requirements.txt
+
+      - name: 🔍 스크리너 실행
+        run: |
+          python screener/screener.py \
+            --max_tickers ${{ github.event.inputs.max_tickers || '300' }} \
+            --min_grade   ${{ github.event.inputs.min_grade   || 'B'   }}
+        env:
+          TZ: Asia/Seoul
+
+      - name: 📧 이메일 발송
+        run: python screener/send_email.py
+        env:
+          GMAIL_USER:         ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RECIPIENT_EMAIL:    ${{ secrets.RECIPIENT_EMAIL }}
+
+      - name: 💾 리포트 아티팩트 저장
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screener-report-${{ github.run_number }}
+          path: output/
+          retention-days: 30
