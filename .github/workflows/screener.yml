@@ -2,7 +2,7 @@ name: Lance Breitstein KRX Screener
 
 on:
   schedule:
-    - cron: "50 23 * * 0-4"
+    - cron: "0 21 * * 0-4" # UTC 21:00 = KST 06:00 (지연 감안 여유 확보)
 
   workflow_dispatch:
     inputs:
